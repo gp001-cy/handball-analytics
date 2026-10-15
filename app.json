@@ -2,8 +2,13 @@
   "expo": {
     "name": "handball-analytics",
     "slug": "handball-analytics",
+    "scheme": "handball-analytics",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
+    "experiments": {
+      "typedRoutes": true,
+      "baseUrl": "/handball-analytics"
+    },
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
@@ -19,7 +24,11 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
-    }
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router"
+    ]
   }
 }
