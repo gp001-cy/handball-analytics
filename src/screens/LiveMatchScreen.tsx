@@ -59,8 +59,6 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
     isClockRunning,
     setIsClockRunning,
     lastGoalFlashTeamId,
-    liveEntryMode,
-    setLiveEntryMode,
     logEvent,
     updateEvent,
     deleteEvent,
@@ -524,7 +522,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
               shape={ourTeam.shapeMarker}
               color={ourTeam.primaryColorHex}
               logoUri={ourTeam.logoUri}
-              size={isPhoneLayout ? 15 : 22}
+              size={isPhoneLayout ? 24 : 32}
             />
             <span style={{ fontSize: isPhoneLayout ? '11px' : '12px', fontWeight: 800 }}>
               {ourTeam.shortCode}
@@ -585,7 +583,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
               shape={oppTeam.shapeMarker}
               color={oppTeam.primaryColorHex}
               logoUri={oppTeam.logoUri}
-              size={isPhoneLayout ? 15 : 22}
+              size={isPhoneLayout ? 24 : 32}
             />
           </div>
         </div>
@@ -804,7 +802,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                 shape={tm.shapeMarker}
                 color={tm.primaryColorHex}
                 logoUri={tm.logoUri}
-                size={isPhoneLayout ? 16 : 18}
+                size={isPhoneLayout ? 26 : 32}
               />
               <span
                 style={{
@@ -1162,8 +1160,8 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                       setPfStep('choose_action');
                     }}
                     style={{
-                      padding: isPhoneLayout ? '8px 10px' : '16px 14px',
-                      minHeight: isPhoneLayout ? '64px' : '120px',
+                      padding: isPhoneLayout ? '8px 10px' : '14px 14px',
+                      minHeight: isPhoneLayout ? '60px' : '100px',
                       borderRadius: isPhoneLayout ? 'var(--radius-md)' : 'var(--radius-lg)',
                       background: 'var(--bg-surface)',
                       border: `1.5px solid ${activeTeam.primaryColorHex}77`,
@@ -1173,6 +1171,10 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                       textAlign: 'left',
                       position: 'relative',
                       cursor: 'pointer',
+                      width: '100%',
+                      maxWidth: '100%',
+                      boxSizing: 'border-box',
+                      overflow: 'hidden',
                       transition: 'border 160ms, background 160ms, transform 120ms',
                     }}
                   >
@@ -1180,19 +1182,20 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                       player={player}
                       jerseyNumber={jerseyNumber}
                       team={activeTeam}
-                      size={isPhoneLayout ? 46 : 64}
+                      size={isPhoneLayout ? 44 : 58}
                     />
 
-                    <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
                       <div
                         style={{
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
                           gap: '6px',
+                          width: '100%',
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, overflow: 'hidden' }}>
                           <span
                             style={{
                               fontSize: '10.5px',
@@ -1209,7 +1212,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                           </span>
                           <span
                             style={{
-                              fontSize: isPhoneLayout ? '14px' : '16px',
+                              fontSize: isPhoneLayout ? '14px' : '15.5px',
                               fontWeight: 800,
                               lineHeight: 1.2,
                               overflow: 'hidden',
@@ -1217,38 +1220,24 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                               whiteSpace: 'nowrap',
                             }}
                           >
-                            #{jerseyNumber} {player.lastName}
-                          </span>
-                          <span
-                            style={{
-                              fontSize: '11px',
-                              color: 'var(--text-secondary)',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            {player.firstName}
+                            #{jerseyNumber} {player.lastName} {player.firstName}
                           </span>
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-                          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                            {player.handedness}-Hand
-                          </span>
                           {isPhoneLayout && (
                             <span
                               style={{
                                 fontSize: '10.5px',
                                 fontWeight: 800,
-                                padding: '2px 6px',
+                                padding: '2px 7px',
                                 borderRadius: '4px',
                                 background: 'rgba(56, 189, 248, 0.12)',
                                 color: 'var(--accent-primary)',
                                 border: '1px solid rgba(56, 189, 248, 0.25)',
                               }}
                             >
-                              + Akcija →
+                              + Akcija
                             </span>
                           )}
                         </div>
@@ -1258,11 +1247,12 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                         style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '8px',
-                          marginTop: '4px',
+                          gap: '6px',
+                          marginTop: '3px',
                           fontSize: '11px',
                           fontWeight: 700,
-                          flexWrap: 'wrap',
+                          flexWrap: 'nowrap',
+                          overflow: 'hidden',
                         }}
                       >
                         <span
@@ -1272,11 +1262,12 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                               (st?.goals ?? 0) > 0
                                 ? 'var(--sem-goal)'
                                 : 'var(--text-secondary)',
+                            flexShrink: 0,
                           }}
                         >
                           {st?.goals ?? 0}/{st?.shots ?? 0} G
                         </span>
-                        <span>·</span>
+                        <span style={{ color: 'var(--border-strong)', flexShrink: 0 }}>·</span>
                         <span
                           className="tabular-nums"
                           style={{
@@ -1284,11 +1275,12 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                               (st?.assists ?? 0) > 0
                                 ? 'var(--sem-assist)'
                                 : 'var(--text-secondary)',
+                            flexShrink: 0,
                           }}
                         >
                           {st?.assists ?? 0} A
                         </span>
-                        <span>·</span>
+                        <span style={{ color: 'var(--border-strong)', flexShrink: 0 }}>·</span>
                         <span
                           className="tabular-nums"
                           style={{
@@ -1296,14 +1288,15 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                               (st?.technicalFaults ?? 0) > 0
                                 ? 'var(--sem-fault)'
                                 : 'var(--text-secondary)',
+                            flexShrink: 0,
                           }}
                         >
                           {st?.technicalFaults ?? 0} TF
                         </span>
-                        <span>·</span>
+                        <span style={{ color: 'var(--border-strong)', flexShrink: 0 }}>·</span>
                         <span
                           className="tabular-nums"
-                          style={{ color: pmColor }}
+                          style={{ color: pmColor, flexShrink: 0 }}
                         >
                           {pm > 0 ? `+${pm}` : pm} +/-
                         </span>
@@ -1382,7 +1375,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                     }}
                     style={{
                       padding: isPhoneLayout ? '8px 10px' : '12px 14px',
-                      minHeight: isPhoneLayout ? '58px' : '72px',
+                      minHeight: isPhoneLayout ? '56px' : '68px',
                       borderRadius: 'var(--radius-md)',
                       background: 'var(--bg-surface)',
                       border: '1px solid var(--border-subtle)',
@@ -1392,6 +1385,10 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                       textAlign: 'left',
                       position: 'relative',
                       cursor: 'pointer',
+                      width: '100%',
+                      maxWidth: '100%',
+                      boxSizing: 'border-box',
+                      overflow: 'hidden',
                       transition: 'border-color 160ms, transform 140ms',
                     }}
                   >
@@ -1399,9 +1396,9 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                       player={player}
                       jerseyNumber={jerseyNumber}
                       team={activeTeam}
-                      size={isPhoneLayout ? 42 : 54}
+                      size={isPhoneLayout ? 40 : 50}
                     />
-                    <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
                       <div
                         style={{
                           display: 'flex',
@@ -1410,12 +1407,9 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                           gap: '6px',
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
-                          <span style={{ fontSize: isPhoneLayout ? '14px' : '15px', fontWeight: 800 }}>
-                            #{jerseyNumber} {player.lastName}
-                          </span>
-                          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                            {player.firstName}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, overflow: 'hidden' }}>
+                          <span style={{ fontSize: isPhoneLayout ? '13.5px' : '15px', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            #{jerseyNumber} {player.lastName} {player.firstName}
                           </span>
                         </div>
                         <span
@@ -1497,8 +1491,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   {selectedPlayer.lastName}
                 </div>
                 <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                  {activeTeam.name} · {selectedPlayer.primaryPosition} (
-                  {selectedPlayer.handedness}-Hand)
+                  {activeTeam.name} · {selectedPlayer.primaryPosition}
                 </div>
               </div>
             </div>
@@ -1637,8 +1630,8 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
               }}
             >
               {locale === 'sl'
-                ? 'HITRI VNOSI: NAPAKE, OBRAMBA IN DISKVALIFIKACIJE'
-                : 'QUICK ACTIONS: TURNOVERS, DEFENCE & DISCIPLINE'}
+                ? 'HITRI VNOSI: TEHNIČNE NAPAKE, OBRAMBA, KAZNI IN 7M'
+                : 'QUICK ACTIONS: TURNOVERS, DEFENCE, DISCIPLINE & 7M'}
             </div>
             <div
               style={{
@@ -1649,18 +1642,15 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                 gap: '8px',
               }}
             >
+              {/* 1. Bad Pass */}
               <button
                 type="button"
                 onClick={() =>
-                  handleQuickNonShotEvent(
-                    'technical_fault',
-                    'bad_pass',
-                    t.faults.bad_pass
-                  )
+                  handleQuickNonShotEvent('technical_fault', 'bad_pass', t.faults.bad_pass)
                 }
                 style={{
-                  minHeight: '54px',
-                  padding: '10px',
+                  minHeight: '48px',
+                  padding: '8px 10px',
                   borderRadius: 'var(--radius-md)',
                   background: 'var(--sem-fault-bg)',
                   border: '1.5px solid var(--sem-fault)',
@@ -1668,26 +1658,23 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   alignItems: 'center',
                   gap: '8px',
                   fontWeight: 800,
-                  fontSize: '13px',
+                  fontSize: '12px',
                   cursor: 'pointer',
                 }}
               >
-                <IconTurnoverFault size={22} />
+                <IconTurnoverFault size={20} />
                 <span>{locale === 'sl' ? 'TN: Slaba podaja' : 'TF: Bad Pass'}</span>
               </button>
 
+              {/* 2. Steps / Line */}
               <button
                 type="button"
                 onClick={() =>
-                  handleQuickNonShotEvent(
-                    'technical_fault',
-                    'steps',
-                    t.faults.steps
-                  )
+                  handleQuickNonShotEvent('technical_fault', 'steps', t.faults.steps)
                 }
                 style={{
-                  minHeight: '54px',
-                  padding: '10px',
+                  minHeight: '48px',
+                  padding: '8px 10px',
                   borderRadius: 'var(--radius-md)',
                   background: 'var(--sem-fault-bg)',
                   border: '1.5px solid var(--sem-fault)',
@@ -1695,26 +1682,23 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   alignItems: 'center',
                   gap: '8px',
                   fontWeight: 800,
-                  fontSize: '13px',
+                  fontSize: '12px',
                   cursor: 'pointer',
                 }}
               >
-                <IconTurnoverFault size={22} />
+                <IconTurnoverFault size={20} />
                 <span>{locale === 'sl' ? 'TN: Koraki / Črta' : 'TF: Steps / Line'}</span>
               </button>
 
+              {/* 3. Offensive Foul */}
               <button
                 type="button"
                 onClick={() =>
-                  handleQuickNonShotEvent(
-                    'technical_fault',
-                    'offensive_foul',
-                    t.faults.offensive_foul
-                  )
+                  handleQuickNonShotEvent('technical_fault', 'offensive_foul', t.faults.offensive_foul)
                 }
                 style={{
-                  minHeight: '54px',
-                  padding: '10px',
+                  minHeight: '48px',
+                  padding: '8px 10px',
                   borderRadius: 'var(--radius-md)',
                   background: 'var(--sem-fault-bg)',
                   border: '1.5px solid var(--sem-fault)',
@@ -1722,22 +1706,47 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   alignItems: 'center',
                   gap: '8px',
                   fontWeight: 800,
-                  fontSize: '13px',
+                  fontSize: '12px',
                   cursor: 'pointer',
                 }}
               >
-                <IconTurnoverFault size={22} />
+                <IconTurnoverFault size={20} />
                 <span>{locale === 'sl' ? 'TN: Prekršek v napadu' : 'TF: Off. Foul'}</span>
               </button>
 
+              {/* 4. Catching Error / Double Dribble */}
+              <button
+                type="button"
+                onClick={() =>
+                  handleQuickNonShotEvent('technical_fault', 'catching_error', t.faults.catching_error)
+                }
+                style={{
+                  minHeight: '48px',
+                  padding: '8px 10px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--sem-fault-bg)',
+                  border: '1.5px solid var(--sem-fault)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontWeight: 800,
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                }}
+              >
+                <IconTurnoverFault size={20} />
+                <span>{locale === 'sl' ? 'TN: Lovljenje / Dvojno' : 'TF: Catch / Dribble'}</span>
+              </button>
+
+              {/* 5. Steal */}
               <button
                 type="button"
                 onClick={() =>
                   handleQuickNonShotEvent('defence', 'steal', t.live.steal)
                 }
                 style={{
-                  minHeight: '54px',
-                  padding: '10px',
+                  minHeight: '48px',
+                  padding: '8px 10px',
                   borderRadius: 'var(--radius-md)',
                   background: 'var(--sem-goal-bg)',
                   border: '1.5px solid var(--sem-goal)',
@@ -1745,22 +1754,23 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   alignItems: 'center',
                   gap: '8px',
                   fontWeight: 800,
-                  fontSize: '13px',
+                  fontSize: '12px',
                   cursor: 'pointer',
                 }}
               >
-                <IconStealBall size={22} />
+                <IconStealBall size={20} />
                 <span>{locale === 'sl' ? 'Odvzeta žoga' : 'Steal / Interc.'}</span>
               </button>
 
+              {/* 6. Defensive Block */}
               <button
                 type="button"
                 onClick={() =>
                   handleQuickNonShotEvent('defence', 'block', t.live.block)
                 }
                 style={{
-                  minHeight: '54px',
-                  padding: '10px',
+                  minHeight: '48px',
+                  padding: '8px 10px',
                   borderRadius: 'var(--radius-md)',
                   background: 'var(--sem-block-bg)',
                   border: '1.5px solid var(--sem-block)',
@@ -1768,22 +1778,23 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   alignItems: 'center',
                   gap: '8px',
                   fontWeight: 800,
-                  fontSize: '13px',
+                  fontSize: '12px',
                   cursor: 'pointer',
                 }}
               >
-                <IconBlockWall size={22} />
+                <IconBlockWall size={20} />
                 <span>{locale === 'sl' ? 'Blok v obrambi' : 'Defensive Block'}</span>
               </button>
 
+              {/* 7. Conceded 7m Penalty */}
               <button
                 type="button"
                 onClick={() =>
-                  handleQuickNonShotEvent('discipline', '2min', t.live.twoMin)
+                  handleQuickNonShotEvent('defence', '7m_conceded', '7m Conceded')
                 }
                 style={{
-                  minHeight: '54px',
-                  padding: '10px',
+                  minHeight: '48px',
+                  padding: '8px 10px',
                   borderRadius: 'var(--radius-md)',
                   background: 'var(--sem-fault-bg)',
                   border: '1.5px solid var(--sem-fault)',
@@ -1791,25 +1802,96 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   alignItems: 'center',
                   gap: '8px',
                   fontWeight: 800,
-                  fontSize: '13px',
+                  fontSize: '12px',
                   cursor: 'pointer',
                 }}
               >
-                <IconTwoMinSuspension size={22} />
-                <span>{locale === 'sl' ? '2 minuti izključitve' : "2 Min Suspension"}</span>
+                <MiniCourtZoneDiagram highlight="7m" size={24} />
+                <span>{locale === 'sl' ? 'Skrivljena 7m' : '7m Conceded'}</span>
               </button>
 
+              {/* 8. 2 Min Suspension */}
               <button
                 type="button"
                 onClick={() =>
-                  handleQuickNonShotEvent(
-                    'attack_other',
-                    'earned_7m',
-                    locale === 'sl' ? 'Izborjena 7m' : 'Earned 7m Pen'
-                  )
+                  handleQuickNonShotEvent('discipline', '2min', t.live.twoMin)
                 }
                 style={{
-                  minHeight: '50px',
+                  minHeight: '48px',
+                  padding: '8px 10px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--sem-fault-bg)',
+                  border: '1.5px solid var(--sem-fault)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontWeight: 800,
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                }}
+              >
+                <IconTwoMinSuspension size={20} />
+                <span>{locale === 'sl' ? '2 min kazen' : '2 Min Susp.'}</span>
+              </button>
+
+              {/* 9. Yellow Card */}
+              <button
+                type="button"
+                onClick={() =>
+                  handleQuickNonShotEvent('discipline', 'yellow', 'Yellow Card')
+                }
+                style={{
+                  minHeight: '48px',
+                  padding: '8px 10px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'rgba(234, 179, 8, 0.16)',
+                  border: '1.5px solid #eab308',
+                  color: '#eab308',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontWeight: 800,
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                }}
+              >
+                <span style={{ width: '12px', height: '16px', background: '#eab308', borderRadius: '2px', display: 'inline-block' }} />
+                <span>{locale === 'sl' ? 'Rumen karton' : 'Yellow Card'}</span>
+              </button>
+
+              {/* 10. Red Card */}
+              <button
+                type="button"
+                onClick={() =>
+                  handleQuickNonShotEvent('discipline', 'red', 'Red Card')
+                }
+                style={{
+                  minHeight: '48px',
+                  padding: '8px 10px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'rgba(239, 68, 68, 0.16)',
+                  border: '1.5px solid #ef4444',
+                  color: '#ef4444',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontWeight: 800,
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                }}
+              >
+                <span style={{ width: '12px', height: '16px', background: '#ef4444', borderRadius: '2px', display: 'inline-block' }} />
+                <span>{locale === 'sl' ? 'Rdeč karton' : 'Red Card'}</span>
+              </button>
+
+              {/* 11. Earned 7m Pen */}
+              <button
+                type="button"
+                onClick={() =>
+                  handleQuickNonShotEvent('attack_other', 'earned_7m', locale === 'sl' ? 'Izborjena 7m' : 'Earned 7m Pen')
+                }
+                style={{
+                  minHeight: '48px',
                   padding: '8px 10px',
                   borderRadius: 'var(--radius-md)',
                   background: 'var(--accent-primary-subtle)',
@@ -1818,13 +1900,36 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   alignItems: 'center',
                   gap: '8px',
                   fontWeight: 800,
-                  fontSize: '12.5px',
+                  fontSize: '12px',
                   cursor: 'pointer',
-                  gridColumn: isPhoneLayout ? 'span 2' : undefined,
                 }}
               >
-                <MiniCourtZoneDiagram highlight="7m" size={26} />
+                <MiniCourtZoneDiagram highlight="7m" size={24} />
                 <span>{locale === 'sl' ? 'Izborjena 7m' : 'Earned 7m Pen'}</span>
+              </button>
+
+              {/* 12. Earned 2 Min */}
+              <button
+                type="button"
+                onClick={() =>
+                  handleQuickNonShotEvent('attack_other', 'earned_2min', locale === 'sl' ? "Izborjeni 2'" : "Earned 2 Min")
+                }
+                style={{
+                  minHeight: '48px',
+                  padding: '8px 10px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--accent-primary-subtle)',
+                  border: '1.5px solid var(--accent-primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontWeight: 800,
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                }}
+              >
+                <IconTwoMinSuspension size={20} />
+                <span>{locale === 'sl' ? "Izborjeni 2'" : "Earned 2 Min"}</span>
               </button>
             </div>
           </div>
@@ -1840,10 +1945,13 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
             background: 'var(--bg-surface)',
             border: '2px solid var(--accent-primary)',
             borderRadius: 'var(--radius-lg)',
-            padding: isPhoneLayout ? '12px' : '18px',
+            padding: isPhoneLayout ? '10px 12px' : '16px 18px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '12px',
+            gap: '10px',
+            width: '100%',
+            maxWidth: '100%',
+            boxSizing: 'border-box',
           }}
         >
           <div
@@ -1851,14 +1959,15 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              gap: '8px',
+              gap: '6px',
               flexWrap: 'wrap',
+              width: '100%',
             }}
           >
-            <div>
+            <div style={{ minWidth: 0, flex: 1 }}>
               <div
                 style={{
-                  fontSize: '12px',
+                  fontSize: '11px',
                   fontWeight: 800,
                   color: 'var(--accent-primary)',
                 }}
@@ -1867,33 +1976,33 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   ? `2. KORAK · #${selectedJersey} ${selectedPlayer.lastName} (${pendingOutcome.toUpperCase()})`
                   : `STEP 2 OF 3 · #${selectedJersey} ${selectedPlayer.lastName} (${pendingOutcome.toUpperCase()})`}
               </div>
-              <div style={{ fontSize: '16px', fontWeight: 800 }}>
-                {locale === 'sl'
-                  ? 'Izberite mesto meta na igrišču'
-                  : 'Tap where the shot was taken from'}
+              <div style={{ fontSize: isPhoneLayout ? '13.5px' : '16px', fontWeight: 800 }}>
+                {shotOrigin
+                  ? `📍 ${t.zones[shotOrigin.zone]}`
+                  : (locale === 'sl' ? 'Izberite mesto meta na igrišču' : 'Tap where shot was taken')}
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
               <button
                 type="button"
                 onClick={() => setActiveZoomMap('court')}
                 style={{
-                  minHeight: '38px',
-                  padding: '0 12px',
+                  minHeight: '34px',
+                  padding: '0 8px',
                   borderRadius: 'var(--radius-sm)',
                   background: 'var(--bg-elevated)',
                   border: '1px solid var(--accent-primary)',
                   fontWeight: 700,
-                  fontSize: '12px',
+                  fontSize: '11px',
                   color: 'var(--accent-primary)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '4px',
+                  gap: '3px',
                   cursor: 'pointer',
                 }}
               >
-                ⛶ {locale === 'sl' ? 'Povečaj igrišče' : 'Enlarge'}
+                ⛶ {locale === 'sl' ? 'Povečaj' : 'Enlarge'}
               </button>
 
               <button
@@ -1904,79 +2013,57 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   setPfStep('choose_action');
                 }}
                 style={{
-                  minHeight: '38px',
-                  padding: '0 12px',
+                  minHeight: '34px',
+                  padding: '0 9px',
                   borderRadius: 'var(--radius-sm)',
                   background: 'var(--bg-elevated)',
                   border: '1px solid var(--border-strong)',
                   fontWeight: 700,
-                  fontSize: '12px',
+                  fontSize: '11.5px',
                   cursor: 'pointer',
                 }}
               >
                 ← {locale === 'sl' ? 'Nazaj' : 'Back'}
               </button>
-            </div>
-          </div>
 
-          {/* Confirmation Banner with 2s Auto-Continue */}
-          {shotOrigin && (
-            <div
-              style={{
-                padding: '10px 12px',
-                borderRadius: 'var(--radius-md)',
-                background: 'rgba(56, 189, 248, 0.14)',
-                border: '2px solid var(--accent-primary)',
-                display: 'flex',
-                flexDirection: isPhoneLayout ? 'column' : 'row',
-                alignItems: isPhoneLayout ? 'stretch' : 'center',
-                justifyContent: 'space-between',
-                gap: '8px',
-              }}
-            >
-              <div>
-                <div style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  📍 {locale === 'sl' ? 'Izbrano mesto:' : 'Selected Origin:'} {t.zones[shotOrigin.zone]}
-                </div>
-                <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                  {locale === 'sl'
-                    ? `Samodejni prehod čez ${originCountdown ?? 2}s · ali kliknite gumb za takojšnjo potrditev.`
-                    : `Auto-continuing in ${originCountdown ?? 2}s · or click button to proceed now.`}
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleConfirmCourtOrigin}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'var(--accent-primary)',
-                  color: '#080c14',
-                  fontWeight: 800,
-                  fontSize: '12.5px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  cursor: 'pointer',
-                  boxShadow: '0 0 10px rgba(56, 189, 248, 0.45)',
-                }}
-              >
-                <span>✓ {locale === 'sl' ? 'Potrdi pozicijo' : 'Confirm Court Origin'}</span>
-                <span
-                  className="tabular-nums"
+              {/* One green confirm button to the right of Back */}
+              {shotOrigin && (
+                <button
+                  type="button"
+                  onClick={handleConfirmCourtOrigin}
                   style={{
-                    fontSize: '11px',
-                    padding: '2px 5px',
-                    borderRadius: '4px',
-                    background: 'rgba(0,0,0,0.22)',
+                    minHeight: '34px',
+                    padding: '0 12px',
+                    borderRadius: 'var(--radius-sm)',
+                    background: 'var(--sem-goal)',
+                    color: '#080c14',
+                    fontWeight: 800,
+                    fontSize: '11.5px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    cursor: 'pointer',
+                    boxShadow: '0 0 10px rgba(0, 229, 163, 0.45)',
                   }}
                 >
-                  {originCountdown ? `(${originCountdown}s)` : '→'}
-                </span>
-              </button>
+                  <span>✓ {locale === 'sl' ? 'Potrdi' : 'Confirm'}</span>
+                  {originCountdown && (
+                    <span
+                      className="tabular-nums"
+                      style={{
+                        fontSize: '10px',
+                        padding: '1px 4px',
+                        borderRadius: '3px',
+                        background: 'rgba(0,0,0,0.22)',
+                      }}
+                    >
+                      {originCountdown}s
+                    </span>
+                  )}
+                </button>
+              )}
             </div>
-          )}
+          </div>
 
           <HandballCourt
             mode="entry"
@@ -1998,10 +2085,13 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
             background: 'var(--bg-surface)',
             border: '2px solid var(--sem-goal)',
             borderRadius: 'var(--radius-lg)',
-            padding: isPhoneLayout ? '12px' : '18px',
+            padding: isPhoneLayout ? '10px 12px' : '16px 18px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '12px',
+            gap: '10px',
+            width: '100%',
+            maxWidth: '100%',
+            boxSizing: 'border-box',
           }}
         >
           <div
@@ -2009,14 +2099,15 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              gap: '8px',
+              gap: '6px',
               flexWrap: 'wrap',
+              width: '100%',
             }}
           >
-            <div>
+            <div style={{ minWidth: 0, flex: 1 }}>
               <div
                 style={{
-                  fontSize: '12px',
+                  fontSize: '11px',
                   fontWeight: 800,
                   color: 'var(--sem-goal)',
                 }}
@@ -2025,33 +2116,33 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   ? `3. KORAK · IZ ${shotOrigin ? t.zones[shotOrigin.zone] : 'IGRIŠČA'}`
                   : `STEP 3 OF 3 · FROM ${shotOrigin ? t.zones[shotOrigin.zone] : 'COURT'}`}
               </div>
-              <div style={{ fontSize: '16px', fontWeight: 800 }}>
-                {locale === 'sl'
-                  ? `Izberite del gola, kamor je streljal #${selectedJersey} ${selectedPlayer.lastName}`
-                  : `Tap the Goal Frame where #${selectedJersey} ${selectedPlayer.lastName} shot it`}
+              <div style={{ fontSize: isPhoneLayout ? '13.5px' : '16px', fontWeight: 800 }}>
+                {goalTarget
+                  ? `🎯 ${t.goalCells[goalTarget.cell]}`
+                  : (locale === 'sl' ? 'Izberite del gola' : 'Tap goal target')}
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
               <button
                 type="button"
                 onClick={() => setActiveZoomMap('goal')}
                 style={{
-                  minHeight: '38px',
-                  padding: '0 12px',
+                  minHeight: '34px',
+                  padding: '0 8px',
                   borderRadius: 'var(--radius-sm)',
                   background: 'var(--bg-elevated)',
                   border: '1px solid var(--sem-goal)',
                   fontWeight: 700,
-                  fontSize: '12px',
+                  fontSize: '11px',
                   color: 'var(--sem-goal)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '4px',
+                  gap: '3px',
                   cursor: 'pointer',
                 }}
               >
-                ⛶ {locale === 'sl' ? 'Povečaj gol' : 'Enlarge'}
+                ⛶ {locale === 'sl' ? 'Povečaj' : 'Enlarge'}
               </button>
 
               <button
@@ -2062,83 +2153,60 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   setPfStep('pick_court_origin');
                 }}
                 style={{
-                  minHeight: '38px',
-                  padding: '0 12px',
+                  minHeight: '34px',
+                  padding: '0 9px',
                   borderRadius: 'var(--radius-sm)',
                   background: 'var(--bg-elevated)',
                   border: '1px solid var(--border-strong)',
                   fontWeight: 700,
-                  fontSize: '12px',
+                  fontSize: '11.5px',
                   cursor: 'pointer',
                 }}
               >
                 ← {locale === 'sl' ? 'Igrišče' : 'Court'}
               </button>
+
+              {/* Just one green confirm button to the right of "Court" / "Igrišče" */}
+              {goalTarget && (
+                <button
+                  type="button"
+                  onClick={handleConfirmGoalTarget}
+                  style={{
+                    minHeight: '34px',
+                    padding: '0 12px',
+                    borderRadius: 'var(--radius-sm)',
+                    background: 'var(--sem-goal)',
+                    color: '#080c14',
+                    fontWeight: 800,
+                    fontSize: '11.5px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    cursor: 'pointer',
+                    boxShadow: '0 0 10px rgba(0, 229, 163, 0.45)',
+                  }}
+                >
+                  <span>✓ {locale === 'sl' ? 'Potrdi & Shrani' : 'Confirm & Save'}</span>
+                  {targetCountdown && (
+                    <span
+                      className="tabular-nums"
+                      style={{
+                        fontSize: '10px',
+                        padding: '1px 4px',
+                        borderRadius: '3px',
+                        background: 'rgba(0,0,0,0.22)',
+                      }}
+                    >
+                      {targetCountdown}s
+                    </span>
+                  )}
+                </button>
+              )}
             </div>
           </div>
 
           {/* Bounce Shot Toggle & Assisted By Picker */}
           {renderBounceAndAssistControls()}
-
-          {/* Confirmation Banner with 2s Auto-Continue */}
-          {goalTarget && (
-            <div
-              style={{
-                padding: '10px 12px',
-                borderRadius: 'var(--radius-md)',
-                background: 'rgba(0, 229, 163, 0.14)',
-                border: '2px solid var(--sem-goal)',
-                display: 'flex',
-                flexDirection: isPhoneLayout ? 'column' : 'row',
-                alignItems: isPhoneLayout ? 'stretch' : 'center',
-                justifyContent: 'space-between',
-                gap: '8px',
-              }}
-            >
-              <div>
-                <div style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  🎯 {locale === 'sl' ? 'Izbran del gola:' : 'Selected Target:'} {t.goalCells[goalTarget.cell]}
-                  {isBounceShot ? (locale === 'sl' ? ' · Met od tal' : ' · Bounce Shot') : ''}
-                </div>
-                <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                  {locale === 'sl'
-                    ? `Samodejno shranjevanje čez ${targetCountdown ?? 2}s · ali kliknite za takojšnjo potrditev.`
-                    : `Auto-saving shot in ${targetCountdown ?? 2}s · or click button to confirm & save now.`}
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleConfirmGoalTarget}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'var(--sem-goal)',
-                  color: '#080c14',
-                  fontWeight: 800,
-                  fontSize: '12.5px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  cursor: 'pointer',
-                  boxShadow: '0 0 10px rgba(0, 229, 163, 0.45)',
-                }}
-              >
-                <span>✓ {locale === 'sl' ? 'Potrdi in shrani strel' : 'Confirm & Save Shot'}</span>
-                <span
-                  className="tabular-nums"
-                  style={{
-                    fontSize: '11px',
-                    padding: '2px 5px',
-                    borderRadius: '4px',
-                    background: 'rgba(0,0,0,0.22)',
-                  }}
-                >
-                  {targetCountdown ? `(${targetCountdown}s)` : '✓'}
-                </span>
-              </button>
-            </div>
-          )}
 
           <HandballGoal
             mode="entry"

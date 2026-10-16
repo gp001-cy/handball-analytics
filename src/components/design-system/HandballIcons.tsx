@@ -260,35 +260,15 @@ export const PlayerVisualPortrait: React.FC<{
       }}
     >
       {player.photoUri ? (
-        <>
-          <img
-            src={player.photoUri}
-            alt={`${player.firstName} ${player.lastName}`}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-            }}
-          />
-          {/* Jersey Number badge overlay for custom photos */}
-          <span
-            style={{
-              position: 'absolute',
-              bottom: '2px',
-              right: '2px',
-              fontSize: '11px',
-              fontWeight: 800,
-              fontFamily: 'var(--font-mono)',
-              padding: '1px 4px',
-              borderRadius: '4px',
-              background: 'rgba(2, 4, 8, 0.88)',
-              color: '#ffffff',
-              border: `1px solid ${kitPrimary}`,
-            }}
-          >
-            #{jerseyNumber}
-          </span>
-        </>
+        <img
+          src={player.photoUri}
+          alt={`${player.firstName} ${player.lastName}`}
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+          }}
+        />
       ) : (
         <svg
           width={size}
@@ -329,40 +309,6 @@ export const PlayerVisualPortrait: React.FC<{
           </text>
         </svg>
       )}
-
-      {/* Handedness Corner Pill */}
-      <span
-        style={{
-          position: 'absolute',
-          top: '3px',
-          right: '3px',
-          fontSize: '9px',
-          fontWeight: 800,
-          padding: '1px 4px',
-          borderRadius: '4px',
-          background: 'rgba(8, 12, 20, 0.82)',
-          color: player.handedness === 'L' ? 'var(--sem-miss)' : 'var(--text-secondary)',
-        }}
-      >
-        {player.handedness}
-      </span>
-
-      {/* Position Corner Pill */}
-      <span
-        style={{
-          position: 'absolute',
-          top: '3px',
-          left: '3px',
-          fontSize: '9px',
-          fontWeight: 800,
-          padding: '1px 4px',
-          borderRadius: '4px',
-          background: isGk ? 'var(--sem-save)' : 'rgba(8, 12, 20, 0.82)',
-          color: '#ffffff',
-        }}
-      >
-        {pos}
-      </span>
     </div>
   );
 };

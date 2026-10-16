@@ -375,7 +375,7 @@ export const PreMatchPrepScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                             #{p.defaultJerseyNumber} {p.firstName} {p.lastName}
                           </div>
                           <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                            {p.primaryPosition} ({p.handedness}-Hand) · Bounce:{' '}
+                            {p.primaryPosition} · Bounce:{' '}
                             {st?.bounceGoals ?? 0}/{st?.bounceShots ?? 0} · Ast:{' '}
                             {st?.assists ?? 0}
                           </div>
@@ -580,7 +580,7 @@ export const PreMatchPrepScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                         {shooter.lastName}
                       </h3>
                       <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                        {shooter.primaryPosition} · {shooter.handedness}-Hand ·
+                        {shooter.primaryPosition} ·
                         Bounce Shots: {st?.bounceGoals ?? 0}/{st?.bounceShots ?? 0}
                       </div>
                     </div>
@@ -743,7 +743,7 @@ export const PreMatchPrepScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                         {p.firstName} {p.lastName}
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                        {p.primaryPosition} ({p.handedness}) ·{' '}
+                        {p.primaryPosition} ·{' '}
                         {lEntry?.isStarter ? 'Starter 7' : 'Rotation'}
                       </div>
                     </div>

@@ -10,17 +10,18 @@ export const TeamShapeIcon: React.FC<{
   color: string;
   logoUri?: string;
   size?: number;
-}> = ({ shape, color, logoUri, size = 12 }) => {
+}> = ({ shape, color, logoUri, size = 16 }) => {
   if (logoUri) {
+    const clubImgSize = Math.max(Math.round(size * 1.3), 28);
     return (
       <img
         src={logoUri}
         alt=""
         style={{
-          width: size,
-          height: size,
+          width: clubImgSize,
+          height: clubImgSize,
           objectFit: 'contain',
-          borderRadius: '3px',
+          borderRadius: '4px',
           flexShrink: 0,
           display: 'inline-block',
         }}

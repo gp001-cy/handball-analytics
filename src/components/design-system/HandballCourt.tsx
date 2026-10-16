@@ -128,8 +128,27 @@ export const HandballCourt: React.FC<HandballCourtProps> = ({
   const VIEW_W = 400;
   const VIEW_H = 330 + TOP_PAD;
 
-  const handleSvgPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
-    if (!svgRef.current) return;
+  const pointerDownPosRef = useRef<{ clientX: number; clientY: number; time: number } | null>(null);
+
+  const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
+    pointerDownPosRef.current = { clientX: e.clientX, clientY: e.clientY, time: Date.now() };
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (!pointerDownPosRef.current || !svgRef.current) return;
+    const start = pointerDownPosRef.current;
+    pointerDownPosRef.current = null;
+
+    const dx = e.clientX - start.clientX;
+    const dy = e.clientY - start.clientY;
+    const dist = Math.hypot(dx, dy);
+    const duration = Date.now() - start.time;
+
+    // If pointer moved more than 7px or was held > 600ms, user was scrolling/panning! Ignore!
+    if (dist > 7 || duration > 600) {
+      return;
+    }
+
     const rect = svgRef.current.getBoundingClientRect();
     const relX = ((e.clientX - rect.left) / rect.width) * VIEW_W;
     const relY = ((e.clientY - rect.top) / rect.height) * VIEW_H - TOP_PAD;
@@ -240,12 +259,13 @@ export const HandballCourt: React.FC<HandballCourtProps> = ({
         <svg
           ref={svgRef}
           viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-          onPointerDown={handleSvgPointerDown}
+          onPointerDown={handlePointerDown}
+          onPointerUp={handlePointerUp}
           style={{
             width: '100%',
             height: 'auto',
             display: 'block',
-            touchAction: 'manipulation',
+            touchAction: 'pan-y',
             cursor: 'crosshair',
           }}
           role="img"

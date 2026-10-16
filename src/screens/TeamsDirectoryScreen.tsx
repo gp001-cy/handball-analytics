@@ -354,7 +354,6 @@ export const TeamsDirectoryScreen: React.FC<{ isPhoneLayout: boolean }> = ({
               <th>Player</th>
               <th>Default #</th>
               <th>Primary / Sec Pos</th>
-              <th>Hand</th>
               <th>Defensive Role</th>
               <th>Birthdate</th>
               <th>Licence #</th>
@@ -425,7 +424,6 @@ export const TeamsDirectoryScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                     ? ` / ${p.secondaryPositions.join(', ')}`
                     : ''}
                 </td>
-                <td>{p.handedness}</td>
                 <td>{p.defensiveRole.replace('_', ' ')}</td>
                 <td>{p.birthDate}</td>
                 <td>{p.licenceNumber}</td>

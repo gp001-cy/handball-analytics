@@ -678,7 +678,7 @@ export const MatchStatsScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                         {p.firstName} {p.lastName}
                       </div>
                       <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
-                        {p.primaryPosition} ({p.handedness}) · +/-{' '}
+                        {p.primaryPosition} · +/-{' '}
                         <strong
                           style={{
                             color:
