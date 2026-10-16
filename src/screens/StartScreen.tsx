@@ -16,7 +16,6 @@ export const StartScreen: React.FC<{ isPhoneLayout: boolean }> = ({
   isPhoneLayout,
 }) => {
   const {
-    locale,
     teams,
     players,
     matches,
@@ -151,7 +150,7 @@ export const StartScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                 {isPhoneLayout ? ourTeam.shortCode : ourTeam.name}
               </div>
               <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                {locale === 'sl' ? 'Naša ekipa' : 'Our Team'}
+                Our Team
               </div>
             </div>
           </div>
@@ -205,7 +204,7 @@ export const StartScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                 {isPhoneLayout ? oppTeam.shortCode : oppTeam.name}
               </div>
               <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                {locale === 'sl' ? 'Nasprotnik' : 'Opponent'}
+                Opponent
               </div>
             </div>
             <TeamShapeIcon
@@ -228,9 +227,7 @@ export const StartScreen: React.FC<{ isPhoneLayout: boolean }> = ({
             letterSpacing: '0.03em',
           }}
         >
-          {locale === 'sl'
-            ? 'IZBERITE NAČIN VNOSA DOGODKOV V ŽIVO'
-            : 'CHOOSE YOUR LIVE MATCH INPUT MODE'}
+          CHOOSE YOUR LIVE MATCH INPUT MODE
         </div>
 
         <div
@@ -283,17 +280,13 @@ export const StartScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                     color: 'var(--sem-goal)',
                   }}
                 >
-                  {locale === 'sl'
-                    ? 'NAČIN 1 · KORAK ZA KORAKOM'
-                    : 'MODE 1 · STEP-BY-STEP VISUAL'}
+                  MODE 1 · STEP-BY-STEP VISUAL
                 </span>
                 <IconGoalNet size={22} color="var(--sem-goal)" />
               </div>
 
               <div style={{ fontSize: '17px', fontWeight: 800 }}>
-                {locale === 'sl'
-                  ? '1. Najprej portreti igralcev → Akcija → Igrišče → Gol'
-                  : '1. Player Portraits First → Action → Court → Goal'}
+                1. Player Portraits First → Action → Court → Goal
               </div>
               <div
                 style={{
@@ -302,9 +295,9 @@ export const StartScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   lineHeight: 1.45,
                 }}
               >
-                {locale === 'sl'
-                  ? 'Prikazuje le igralce in njihove slike. Tapni igralca za gumbe Gol / Od tal / Podaja / Izguba, nato izberi mesto meta in okvir gola.'
-                  : 'Shows only players and their portraits on screen. Tap a player to open Goal / Bounce / Assist / Turnover buttons, then pick where it was scored from on the court, then tap the goal frame.'}
+                Shows only players and their portraits on screen. Tap a player to
+                open Goal / Bounce / Assist / Turnover buttons, then pick where
+                it was scored from on the court, then tap the goal frame.
               </div>
             </div>
 
@@ -360,9 +353,7 @@ export const StartScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                 textAlign: 'center',
               }}
             >
-              {locale === 'sl'
-                ? '▶ Začni tekmo v živo (Najprej igralci)'
-                : '▶ Start Live Match (Player-First Mode)'}
+              ▶ Start Live Match (Player-First Mode)
             </div>
           </button>
 
@@ -409,17 +400,13 @@ export const StartScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                     color: 'var(--accent-primary)',
                   }}
                 >
-                  {locale === 'sl'
-                    ? 'NAČIN 2 · VSE-V-ENEM'
-                    : 'MODE 2 · PRO ALL-IN-ONE'}
+                  MODE 2 · PRO ALL-IN-ONE
                 </span>
                 <IconBounceShot size={22} color="var(--accent-primary)" />
               </div>
 
               <div style={{ fontSize: '17px', fontWeight: 800 }}>
-                {locale === 'sl'
-                  ? '2. Vsi igralci + igrišče in okvir gola skupaj'
-                  : '2. All Players + Court & Goal Charts Together'}
+                2. All Players + Court & Goal Charts Together
               </div>
               <div
                 style={{
@@ -428,9 +415,9 @@ export const StartScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   lineHeight: 1.45,
                 }}
               >
-                {locale === 'sl'
-                  ? 'Prikazuje vse igralce na igrišču, interaktivno igrišče, 3×3 okvir gola, met od tal, podaje in dnevnik na enem zaslonu.'
-                  : 'Displays all on-court players, the interactive court map, 3×3 goal target, bounce shot toggle, assist picker, and live feed on a single unified screen.'}
+                Displays all on-court players, the interactive court map, 3×3
+                goal target, bounce shot toggle, assist picker, and live feed on
+                a single unified screen.
               </div>
             </div>
 
@@ -459,7 +446,7 @@ export const StartScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                 }}
               >
                 <IconBounceShot size={18} />
-                <span>{locale === 'sl' ? 'Od tal + Podaja' : 'Bounce + Assist'}</span>
+                <span>Bounce + Assist</span>
               </div>
               <IconAssistPass size={20} />
             </div>
@@ -475,9 +462,7 @@ export const StartScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                 textAlign: 'center',
               }}
             >
-              {locale === 'sl'
-                ? '▶ Začni tekmo v živo (Vse-v-enem)'
-                : '▶ Start Live Match (All-in-One Mode)'}
+              ▶ Start Live Match (All-in-One Mode)
             </div>
           </button>
         </div>
@@ -507,14 +492,12 @@ export const StartScreen: React.FC<{ isPhoneLayout: boolean }> = ({
         >
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '13.5px', fontWeight: 800 }}>
-              {locale === 'sl' ? 'Statistika tekme' : 'Match Stats'}
+              Match Stats
             </span>
             <MiniCourtZoneDiagram highlight="wing" size={28} color="var(--sem-goal)" />
           </div>
           <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
-            {locale === 'sl'
-              ? 'Grafični stolpci, cone igrišča, streli od tal in obrambe'
-              : 'Visual bars, court zones, bounce shots & GK saves'}
+            Visual bars, court zones, bounce shots & GK saves
           </span>
         </button>
 
@@ -534,14 +517,12 @@ export const StartScreen: React.FC<{ isPhoneLayout: boolean }> = ({
         >
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '13.5px', fontWeight: 800 }}>
-              {locale === 'sl' ? 'Priprava na tekmo' : 'Pre-Match Scout'}
+              Pre-Match Scout
             </span>
             <IconGkSave size={20} color="var(--sem-save)" />
           </div>
           <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
-            {locale === 'sl'
-              ? 'Profil nasprotnika, kartice strelcev in postava'
-              : 'Opponent profile, shooter cards & lineup confirm'}
+            Opponent profile, shooter cards & lineup confirm
           </span>
         </button>
 
@@ -561,14 +542,12 @@ export const StartScreen: React.FC<{ isPhoneLayout: boolean }> = ({
         >
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '13.5px', fontWeight: 800 }}>
-              {locale === 'sl' ? 'Ekipe in postave' : 'Teams & Rosters'}
+              Teams & Rosters
             </span>
             <IconAssistPass size={20} color="var(--sem-assist)" />
           </div>
           <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
-            {locale === 'sl'
-              ? 'Domača in gostujoča ekipa, številke dresov in logotipi'
-              : 'Own & opponent squads, jersey # & CSV import'}
+            Own & opponent squads, jersey # & CSV import
           </span>
         </button>
 
@@ -588,14 +567,12 @@ export const StartScreen: React.FC<{ isPhoneLayout: boolean }> = ({
         >
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '13.5px', fontWeight: 800 }}>
-              {locale === 'sl' ? 'Izvoz in PDF' : 'Export & PDF'}
+              Export & PDF
             </span>
             <IconGoalNet size={20} color="var(--sem-bounce)" />
           </div>
           <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
-            {locale === 'sl'
-              ? 'Tiskanje PDF poročila, deljenje povezave, CSV in JSON izvoz'
-              : 'Print PDF report, share link, CSV & JSON export'}
+            Print PDF report, share link, CSV & JSON export
           </span>
         </button>
       </div>

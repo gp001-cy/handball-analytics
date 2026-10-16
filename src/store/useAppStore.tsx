@@ -10,7 +10,6 @@ import {
 import {
   AnalyticalFilter,
   AuditRevision,
-  ColorTheme,
   Competition,
   LiveEntryMode,
   LocaleCode,
@@ -61,8 +60,6 @@ interface AppStoreContextValue {
   setLocale: (loc: LocaleCode) => void;
   theme: ThemeMode;
   setTheme: (theme: ThemeMode) => void;
-  colorTheme: ColorTheme;
-  setColorTheme: (theme: ColorTheme) => void;
   viewportSim: ViewportSimulation;
   setViewportSim: (v: ViewportSimulation) => void;
   liveEntryMode: LiveEntryMode;
@@ -210,17 +207,10 @@ export const AppStoreProvider: React.FC<{ children: React.ReactNode }> = ({
   const [comparePlayerId, setComparePlayerId] = useState<string | null>(null);
   const [filter, setFilter] = useState<AnalyticalFilter>(DEFAULT_FILTER);
 
-  const [colorTheme, setColorTheme] = useState<ColorTheme>('blue');
-
   // Sync theme attribute on <html>
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
-
-  // Sync colorTheme attribute on <html>
-  useEffect(() => {
-    document.documentElement.setAttribute('data-color-theme', colorTheme);
-  }, [colorTheme]);
 
   // Crash-safe local persistence on every state change
   useEffect(() => {
@@ -695,8 +685,6 @@ export const AppStoreProvider: React.FC<{ children: React.ReactNode }> = ({
         setLocale,
         theme,
         setTheme,
-        colorTheme,
-        setColorTheme,
         viewportSim,
         setViewportSim,
         liveEntryMode,

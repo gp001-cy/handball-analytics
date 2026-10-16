@@ -18,8 +18,6 @@ const AppShellContent: React.FC = () => {
     setLocale,
     theme,
     setTheme,
-    colorTheme,
-    setColorTheme,
     viewportSim,
     setViewportSim,
     activeTab,
@@ -74,36 +72,12 @@ const AppShellContent: React.FC = () => {
   }, [searchQuery, players, teams, matches]);
 
   const NAV_ITEMS: Array<{ id: ActiveTab; label: string; shortLabel: string }> = [
-    {
-      id: 'start',
-      label: locale === 'sl' ? 'Začetek' : 'Start',
-      shortLabel: locale === 'sl' ? 'Začetek' : 'Start',
-    },
-    {
-      id: 'live',
-      label: t.nav.liveMode,
-      shortLabel: locale === 'sl' ? 'V živo' : 'Live',
-    },
-    {
-      id: 'stats',
-      label: t.common.matchHub,
-      shortLabel: locale === 'sl' ? 'Statistika' : 'Stats',
-    },
-    {
-      id: 'prematch',
-      label: t.nav.preMatch,
-      shortLabel: locale === 'sl' ? 'Priprava' : 'Scout',
-    },
-    {
-      id: 'teams',
-      label: t.nav.teams,
-      shortLabel: locale === 'sl' ? 'Ekipe' : 'Teams',
-    },
-    {
-      id: 'reports',
-      label: t.nav.reports,
-      shortLabel: locale === 'sl' ? 'Izvoz' : 'Export',
-    },
+    { id: 'start', label: 'Start', shortLabel: 'Start' },
+    { id: 'live', label: t.nav.liveMode, shortLabel: 'Live' },
+    { id: 'stats', label: t.common.matchHub, shortLabel: 'Stats' },
+    { id: 'prematch', label: t.nav.preMatch, shortLabel: 'Scout' },
+    { id: 'teams', label: t.nav.teams, shortLabel: 'Teams' },
+    { id: 'reports', label: t.nav.reports, shortLabel: 'Export' },
   ];
 
   return (
@@ -383,51 +357,7 @@ const AppShellContent: React.FC = () => {
             </div>
           )}
 
-          {/* 6 High-Contrast Color Themes */}
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              padding: '3px 5px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--bg-elevated)',
-              border: '1px solid var(--border-strong)',
-            }}
-          >
-            {(
-              [
-                { id: 'blue', color: '#38bdf8', label: 'Sky Blue' },
-                { id: 'emerald', color: '#00e5a3', label: 'Emerald' },
-                { id: 'amber', color: '#f59e0b', label: 'Amber' },
-                { id: 'rose', color: '#f43f5e', label: 'Rose' },
-                { id: 'violet', color: '#a855f7', label: 'Violet' },
-                { id: 'lime', color: '#a3e635', label: 'Lime' },
-              ] as const
-            ).map((th) => {
-              const active = colorTheme === th.id;
-              return (
-                <button
-                  key={th.id}
-                  type="button"
-                  onClick={() => setColorTheme(th.id)}
-                  title={`Color theme: ${th.label}`}
-                  style={{
-                    width: isPhoneLayout ? '16px' : '18px',
-                    height: isPhoneLayout ? '16px' : '18px',
-                    borderRadius: '50%',
-                    background: th.color,
-                    border: active ? '2px solid #ffffff' : '1px solid transparent',
-                    boxShadow: active ? `0 0 6px ${th.color}` : 'none',
-                    transform: active ? 'scale(1.15)' : 'scale(1)',
-                    transition: 'transform 140ms',
-                    cursor: 'pointer',
-                    padding: 0,
-                  }}
-                />
-              );
-            })}
-          </div>
+
 
           <button
             type="button"

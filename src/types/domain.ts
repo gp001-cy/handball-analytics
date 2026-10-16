@@ -1,12 +1,5 @@
 export type LocaleCode = 'en' | 'sl';
 export type ThemeMode = 'dark' | 'light';
-export type ColorTheme =
-  | 'blue'
-  | 'emerald'
-  | 'amber'
-  | 'rose'
-  | 'violet'
-  | 'lime';
 export type ViewportSimulation = 'auto' | 'phone' | 'tablet';
 export type LiveEntryMode = 'player_first' | 'all_in_one';
 

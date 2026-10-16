@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { HandballCourt } from '../components/design-system/HandballCourt';
 import { HandballGoal } from '../components/design-system/HandballGoal';
-import { ZoomableMapModal } from '../components/modals/ZoomableMapModal';
 import {
   IconAssistPass,
   IconBounceShot,
@@ -57,7 +56,6 @@ export const MatchStatsScreen: React.FC<{ isPhoneLayout: boolean }> = ({
   const [viewStyle, setViewStyle] = useState<'visual_cards' | 'table'>(
     'visual_cards'
   );
-  const [activeZoomMap, setActiveZoomMap] = useState<null | 'court' | 'goal'>(null);
 
   const filteredEvents = useMemo(
     () => filterMatchEvents(activeEvents, filter),
@@ -527,39 +525,13 @@ export const MatchStatsScreen: React.FC<{ isPhoneLayout: boolean }> = ({
         <div>
           <div
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
+              fontSize: '12px',
+              fontWeight: 800,
+              color: 'var(--text-secondary)',
               marginBottom: '6px',
             }}
           >
-            <span
-              style={{
-                fontSize: '12px',
-                fontWeight: 800,
-                color: 'var(--text-secondary)',
-              }}
-            >
-              {activeTeamObj.shortCode} {locale === 'sl' ? 'IZKORISTEK CON IGRIŠČA' : 'COURT ZONE CONVERSION'}
-            </span>
-            <button
-              type="button"
-              onClick={() => setActiveZoomMap('court')}
-              style={{
-                padding: '2px 8px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--bg-elevated)',
-                border: '1px solid var(--border-subtle)',
-                fontSize: '11px',
-                fontWeight: 700,
-                color: 'var(--accent-primary)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-            >
-              ⛶ {locale === 'sl' ? 'Povečaj' : 'Enlarge'}
-            </button>
+            {activeTeamObj.shortCode} COURT ZONE CONVERSION
           </div>
           <HandballCourt
             mode="analytics"
@@ -576,39 +548,13 @@ export const MatchStatsScreen: React.FC<{ isPhoneLayout: boolean }> = ({
         <div>
           <div
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
+              fontSize: '12px',
+              fontWeight: 800,
+              color: 'var(--text-secondary)',
               marginBottom: '6px',
             }}
           >
-            <span
-              style={{
-                fontSize: '12px',
-                fontWeight: 800,
-                color: 'var(--text-secondary)',
-              }}
-            >
-              {activeTeamObj.shortCode} {locale === 'sl' ? '3×3 MERITEV V GOL' : '3×3 GOAL TARGET PLACEMENT'}
-            </span>
-            <button
-              type="button"
-              onClick={() => setActiveZoomMap('goal')}
-              style={{
-                padding: '2px 8px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--bg-elevated)',
-                border: '1px solid var(--border-subtle)',
-                fontSize: '11px',
-                fontWeight: 700,
-                color: 'var(--sem-goal)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-            >
-              ⛶ {locale === 'sl' ? 'Povečaj' : 'Enlarge'}
-            </button>
+            {activeTeamObj.shortCode} 3×3 GOAL TARGET PLACEMENT
           </div>
           <HandballGoal
             mode="analytics"
@@ -972,49 +918,6 @@ export const MatchStatsScreen: React.FC<{ isPhoneLayout: boolean }> = ({
           })}
         </div>
       </div>
-
-      {/* Fullscreen Zoomable Map Modal for Stats */}
-      {activeZoomMap === 'court' && (
-        <ZoomableMapModal
-          isOpen={true}
-          onClose={() => setActiveZoomMap(null)}
-          title={`${activeTeamObj.name} — ${locale === 'sl' ? 'Izkoristek con igrišča' : 'Court Zone Conversion'}`}
-          subtitle={locale === 'sl' ? 'Povečava in premik · Tapni cono za filtriranje' : 'Zoom & pan · Tap zone to filter events'}
-        >
-          <div style={{ width: '100%', maxWidth: '640px' }}>
-            <HandballCourt
-              mode="analytics"
-              locale={locale}
-              events={activeTeamEvents}
-              activeZoneFilter={filter.zone}
-              onZoneFilterSelect={(z) => {
-                setFilter((f) => ({ ...f, zone: f.zone === z ? 'all' : z }));
-                setActiveZoomMap(null);
-              }}
-              teamColor={activeTeamObj.primaryColorHex}
-            />
-          </div>
-        </ZoomableMapModal>
-      )}
-
-      {activeZoomMap === 'goal' && (
-        <ZoomableMapModal
-          isOpen={true}
-          onClose={() => setActiveZoomMap(null)}
-          title={`${activeTeamObj.name} — ${locale === 'sl' ? '3×3 Postavitev strelov v gol' : '3×3 Goal Target Placement'}`}
-          subtitle={locale === 'sl' ? 'Povečava in premik tarč' : 'Zoom & pan target heatmap'}
-        >
-          <div style={{ width: '100%', maxWidth: '640px' }}>
-            <HandballGoal
-              mode="analytics"
-              perspective="shooter"
-              locale={locale}
-              events={activeTeamEvents}
-              teamColor={activeTeamObj.primaryColorHex}
-            />
-          </div>
-        </ZoomableMapModal>
-      )}
     </div>
   );
 };

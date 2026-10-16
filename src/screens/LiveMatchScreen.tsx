@@ -1,7 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { HandballCourt } from '../components/design-system/HandballCourt';
 import { HandballGoal } from '../components/design-system/HandballGoal';
-import { ZoomableMapModal } from '../components/modals/ZoomableMapModal';
 import {
   IconAssistPass,
   IconBlockWall,
@@ -167,19 +166,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [editClockStr, setEditClockStr] = useState<string>('00:00');
 
-  // Zoomable Fullscreen Court / Goal Modal State
-  const [activeZoomMap, setActiveZoomMap] = useState<null | 'court' | 'goal'>(null);
-
-  // Fast touch-drag substitution state (120ms hold activation + auto-scroll)
-  const touchHoldTimerRef = useRef<number | null>(null);
-  const isTouchDraggingRef = useRef<boolean>(false);
-
   useEffect(() => {
-    // Only in Mode 2 (all_in_one) do we auto-select CB/LB as active shooter.
-    // In Mode 1 (player_first), do NOT auto-select so user always chooses a player!
-    if (liveEntryMode !== 'all_in_one') {
-      return;
-    }
     const onCourtMap = activeTeamCourt?.onCourtByPosition;
     if (!onCourtMap) return;
     const currentOnCourtIds = Object.values(onCourtMap).filter(Boolean) as string[];
@@ -188,7 +175,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
         onCourtMap.CB || onCourtMap.LB || currentOnCourtIds[0] || null
       );
     }
-  }, [selectedTeamId, activeTeamCourt, selectedPlayerId, liveEntryMode]);
+  }, [selectedTeamId, activeTeamCourt, selectedPlayerId]);
 
   const currentHalf: 1 | 2 =
     clockSec >= activeMatch.format.halfDurationSec ? 2 : 1;
@@ -352,7 +339,6 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
     setIsBounceShot(false);
     setAssistingPlayerId(null);
     setAutoSuggestedSlot(null);
-    setSelectedPlayerId(null);
     setPfStep('select_player');
     if (attackPhase === 'fast_break' || attackPhase === 'second_wave') {
       setAttackPhase('positional');
@@ -418,7 +404,6 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
     );
 
     setOpenActionSheet(null);
-    setSelectedPlayerId(null);
     setPfStep('select_player');
 
     // Possession-changing event: turnover (technical fault) switches immediately to Team B!
@@ -456,14 +441,14 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
         }}
       >
         {/* Compact Scoreboard */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <div
             className={lastGoalFlashTeamId === ourTeam.id ? 'score-flash-active' : ''}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              padding: isPhoneLayout ? '4px 7px' : '5px 12px',
+              padding: isPhoneLayout ? '4px 8px' : '5px 12px',
               borderRadius: 'var(--radius-sm)',
               background: 'var(--bg-elevated)',
               border: `2px solid ${ourTeam.primaryColorHex}`,
@@ -479,7 +464,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
             <span
               className="tabular-nums"
               style={{
-                fontSize: isPhoneLayout ? '19px' : '24px',
+                fontSize: isPhoneLayout ? '20px' : '24px',
                 fontWeight: 800,
                 color: 'var(--text-primary)',
               }}
@@ -498,7 +483,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              padding: isPhoneLayout ? '4px 7px' : '5px 12px',
+              padding: isPhoneLayout ? '4px 8px' : '5px 12px',
               borderRadius: 'var(--radius-sm)',
               background: 'var(--bg-elevated)',
               border: `2px solid ${oppTeam.primaryColorHex}`,
@@ -507,7 +492,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
             <span
               className="tabular-nums"
               style={{
-                fontSize: isPhoneLayout ? '19px' : '24px',
+                fontSize: isPhoneLayout ? '20px' : '24px',
                 fontWeight: 800,
                 color: 'var(--text-primary)',
               }}
@@ -524,87 +509,47 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
           </div>
         </div>
 
-        {/* Clock + Rewind/Forward 10s + Undo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+        {/* Live Running Match Clock with Start/Pause */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: isPhoneLayout ? '6px' : '10px',
+          }}
+        >
           <button
             type="button"
-            onClick={() => setClockSec((s) => Math.max(0, s - 10))}
-            title="Rewind 10s"
+            onClick={() => setIsClockRunning(!isClockRunning)}
             style={{
               minHeight: '38px',
-              padding: '0 6px',
+              padding: isPhoneLayout ? '0 10px' : '0 16px',
               borderRadius: 'var(--radius-sm)',
-              background: 'var(--bg-elevated)',
-              border: '1px solid var(--border-strong)',
-              fontSize: '11px',
+              background: isClockRunning ? 'var(--sem-fault)' : 'var(--sem-goal)',
+              color: isClockRunning ? '#ffffff' : '#080c14',
               fontWeight: 800,
-              color: 'var(--text-secondary)',
-            }}
-          >
-            -10s
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsClockRunning((r) => !r)}
-            style={{
-              minHeight: '38px',
-              padding: isPhoneLayout ? '0 8px' : '0 12px',
-              borderRadius: 'var(--radius-sm)',
-              background: isClockRunning ? 'var(--sem-goal-bg)' : 'var(--bg-interactive)',
-              border: isClockRunning ? '2px solid var(--sem-goal)' : '1.5px solid var(--border-strong)',
+              fontSize: '12px',
               display: 'flex',
               alignItems: 'center',
-              gap: '5px',
+              gap: '6px',
+              boxShadow: isClockRunning ? '0 0 10px rgba(225, 29, 72, 0.4)' : 'none',
             }}
           >
-            <span
-              style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: isClockRunning ? '50%' : '2px',
-                background: isClockRunning ? 'var(--sem-goal)' : 'var(--sem-miss)',
-              }}
-            />
-            <span
-              className="tabular-nums"
-              style={{
-                fontSize: isPhoneLayout ? '15px' : '18px',
-                fontWeight: 800,
-              }}
-            >
+            <span>{isClockRunning ? '⏸' : '▶'}</span>
+            <span className="tabular-nums" style={{ fontSize: '14px', fontWeight: 800 }}>
               {formatClock(clockSec)}
             </span>
             <span
               style={{
                 fontSize: '10px',
                 fontWeight: 800,
-                padding: '1px 3px',
-                borderRadius: '3px',
+                padding: '1px 4px',
+                borderRadius: '4px',
                 background: 'var(--bg-canvas)',
                 color: 'var(--accent-primary)',
               }}
             >
               H{currentHalf}
             </span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setClockSec((s) => Math.min(3600, s + 10))}
-            title="Advance 10s"
-            style={{
-              minHeight: '38px',
-              padding: '0 6px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--bg-elevated)',
-              border: '1px solid var(--border-strong)',
-              fontSize: '11px',
-              fontWeight: 800,
-              color: 'var(--text-secondary)',
-            }}
-          >
-            +10s
           </button>
 
           <button
@@ -785,7 +730,6 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
             type="button"
             onClick={() => {
               setSelectedTeamId(tm.id);
-              setSelectedPlayerId(null);
               setShotOrigin(null);
               setGoalTarget(null);
               setAssistingPlayerId(null);
@@ -1058,103 +1002,6 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
   };
 
   // =====================================================
-  // Fast Touch-Drag Substitution Handlers (120ms activation + auto-scroll down/up)
-  // =====================================================
-  const handleCardPointerDown = (
-    player: (typeof players)[0],
-    source: 'on_court' | 'bench',
-    slot?: PositionCode
-  ) => {
-    if (touchHoldTimerRef.current) {
-      window.clearTimeout(touchHoldTimerRef.current);
-    }
-    touchHoldTimerRef.current = window.setTimeout(() => {
-      isTouchDraggingRef.current = true;
-      setDraggedPlayer({ id: player.id, source, slot });
-      if (typeof navigator !== 'undefined' && navigator.vibrate) {
-        navigator.vibrate(30);
-      }
-    }, 120);
-  };
-
-  const handleCardPointerMove = (e: React.PointerEvent) => {
-    if (!isTouchDraggingRef.current) {
-      return;
-    }
-    // Auto-scroll page when dragging near top or bottom screen boundary
-    const threshold = 110;
-    if (e.clientY > window.innerHeight - threshold) {
-      window.scrollBy({ top: 14, behavior: 'instant' });
-    } else if (e.clientY < threshold) {
-      window.scrollBy({ top: -14, behavior: 'instant' });
-    }
-
-    // Hit test drop targets
-    const el = document.elementFromPoint(e.clientX, e.clientY);
-    const courtTarget = el?.closest('[data-drop-slot]');
-    const benchTarget = el?.closest('[data-drop-bench-id]');
-
-    if (courtTarget) {
-      const targetSlot = courtTarget.getAttribute('data-drop-slot') as PositionCode;
-      setDropTargetSlot(targetSlot);
-      setDropTargetBenchId(null);
-    } else if (benchTarget) {
-      const targetBenchId = benchTarget.getAttribute('data-drop-bench-id');
-      setDropTargetBenchId(targetBenchId);
-      setDropTargetSlot(null);
-    } else {
-      setDropTargetSlot(null);
-      setDropTargetBenchId(null);
-    }
-  };
-
-  const handleCardPointerUp = (
-    player: (typeof players)[0],
-    e: React.PointerEvent
-  ) => {
-    if (touchHoldTimerRef.current) {
-      window.clearTimeout(touchHoldTimerRef.current);
-      touchHoldTimerRef.current = null;
-    }
-
-    if (isTouchDraggingRef.current) {
-      const el = document.elementFromPoint(e.clientX, e.clientY);
-      const courtTarget = el?.closest('[data-drop-slot]');
-      const benchTarget = el?.closest('[data-drop-bench-id]');
-
-      if (draggedPlayer) {
-        if (courtTarget) {
-          const targetSlot = courtTarget.getAttribute('data-drop-slot') as PositionCode;
-          const targetPlayerId = courtTarget.getAttribute('data-player-id');
-          if (draggedPlayer.source === 'bench' && targetPlayerId) {
-            performSubstitution(activeTeam.id, targetPlayerId, draggedPlayer.id, targetSlot);
-          } else if (
-            draggedPlayer.source === 'on_court' &&
-            targetPlayerId &&
-            targetPlayerId !== draggedPlayer.id
-          ) {
-            performSubstitution(activeTeam.id, targetPlayerId, draggedPlayer.id, targetSlot);
-          }
-        } else if (benchTarget) {
-          const targetBenchId = benchTarget.getAttribute('data-drop-bench-id');
-          if (draggedPlayer.source === 'on_court' && draggedPlayer.slot && targetBenchId) {
-            performSubstitution(activeTeam.id, draggedPlayer.id, targetBenchId, draggedPlayer.slot);
-          }
-        }
-      }
-
-      isTouchDraggingRef.current = false;
-      setDraggedPlayer(null);
-      setDropTargetSlot(null);
-      setDropTargetBenchId(null);
-    } else {
-      // Normal quick tap (< 120ms): open player action menu
-      setSelectedPlayerId(player.id);
-      setPfStep('choose_action');
-    }
-  };
-
-  // =====================================================
   // MODE 1: PLAYER-FIRST VISUAL FLOW
   // Step 0: Only Players & Portraits -> Step 1: Action Menu -> Step 2: Court Origin -> Step 3: Goal Frame
   // =====================================================
@@ -1191,9 +1038,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                     letterSpacing: '0.04em',
                   }}
                 >
-                  {locale === 'sl'
-                    ? `NA IGRIŠČU (7 · ${activeTeam.name.toUpperCase()})`
-                    : `ON COURT (7 PLAYERS · ${activeTeam.name.toUpperCase()})`}
+                  ON COURT (7 PLAYERS · {activeTeam.name.toUpperCase()})
                 </span>
                 <span
                   style={{
@@ -1206,7 +1051,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                     border: '1px solid var(--border-subtle)',
                   }}
                 >
-                  {locale === 'sl' ? '⇄ Povleci za menjavo' : '⇄ Drag & Drop to Sub'}
+                  ⇄ Drag & Drop to Sub
                 </span>
               </div>
 
@@ -1229,7 +1074,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                 }}
               >
                 <IconTimeoutCard size={17} />
-                <span>{locale === 'sl' ? 'Minuta odmora' : 'Team Timeout'}</span>
+                <span>Team Timeout</span>
               </button>
             </div>
 
@@ -1239,7 +1084,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                 gridTemplateColumns: isPhoneLayout
                   ? 'repeat(2, 1fr)'
                   : 'repeat(auto-fill, minmax(210px, 1fr))',
-                gap: '10px',
+                gap: '12px',
               }}
             >
               {onCourtPlayersWithSlot.map(({ slot, player, jerseyNumber }) => {
@@ -1261,8 +1106,6 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   <button
                     key={player.id}
                     type="button"
-                    data-drop-slot={slot}
-                    data-player-id={player.id}
                     draggable={true}
                     onDragStart={(e) => {
                       e.dataTransfer.setData('text/plain', player.id);
@@ -1308,19 +1151,13 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                       }
                       setDraggedPlayer(null);
                     }}
-                    onPointerDown={() => handleCardPointerDown(player, 'on_court', slot)}
-                    onPointerMove={handleCardPointerMove}
-                    onPointerUp={(e) => handleCardPointerUp(player, e)}
-                    onPointerCancel={() => {
-                      if (touchHoldTimerRef.current) clearTimeout(touchHoldTimerRef.current);
-                      isTouchDraggingRef.current = false;
-                      setDraggedPlayer(null);
-                      setDropTargetSlot(null);
-                      setDropTargetBenchId(null);
+                    onClick={() => {
+                      setSelectedPlayerId(player.id);
+                      setPfStep('choose_action');
                     }}
                     style={{
-                      padding: isPhoneLayout ? '10px 8px' : '14px 12px',
-                      minHeight: isPhoneLayout ? '96px' : '115px',
+                      padding: isPhoneLayout ? '14px 12px' : '16px 14px',
+                      minHeight: isPhoneLayout ? '110px' : '120px',
                       borderRadius: 'var(--radius-lg)',
                       background: isDragOver
                         ? 'var(--sem-goal-bg)'
@@ -1330,14 +1167,12 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                         : `1.5px solid ${activeTeam.primaryColorHex}77`,
                       display: 'flex',
                       alignItems: 'center',
-                      gap: isPhoneLayout ? '8px' : '12px',
+                      gap: '12px',
                       textAlign: 'left',
                       position: 'relative',
                       opacity: isBeingDragged ? 0.45 : 1,
                       cursor: 'grab',
                       transition: 'border 160ms, background 160ms',
-                      overflow: 'hidden',
-                      touchAction: 'pan-y',
                     }}
                   >
                     <PlayerVisualPortrait
@@ -1345,12 +1180,12 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                       jerseyNumber={jerseyNumber}
                       team={activeTeam}
                       slot={slot}
-                      size={isPhoneLayout ? 54 : 64}
+                      size={isPhoneLayout ? 64 : 70}
                     />
-                    <div style={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
                       <div
                         style={{
-                          fontSize: isPhoneLayout ? '14px' : '16px',
+                          fontSize: '16px',
                           fontWeight: 800,
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -1362,15 +1197,12 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                       </div>
                       <div
                         style={{
-                          fontSize: '11px',
+                          fontSize: '12px',
                           color: 'var(--text-secondary)',
-                          marginBottom: '4px',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
+                          marginBottom: '6px',
                         }}
                       >
-                        #{jerseyNumber} · <strong>{slot}</strong>
+                        {player.firstName} · <strong>{slot}</strong>
                       </div>
 
                       {/* Colorful Mini Stat Pills: G, A, TF, and +/- */}
@@ -1378,16 +1210,16 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                         className="tabular-nums"
                         style={{
                           display: 'flex',
-                          gap: '3px',
+                          gap: '4px',
                           flexWrap: 'wrap',
                         }}
                       >
                         <span
                           style={{
-                            fontSize: '10px',
+                            fontSize: '11px',
                             fontWeight: 800,
-                            padding: '1px 4px',
-                            borderRadius: '3px',
+                            padding: '2px 5px',
+                            borderRadius: '4px',
                             background: 'var(--sem-goal-bg)',
                             color: 'var(--sem-goal)',
                           }}
@@ -1396,10 +1228,10 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                         </span>
                         <span
                           style={{
-                            fontSize: '10px',
+                            fontSize: '11px',
                             fontWeight: 800,
-                            padding: '1px 4px',
-                            borderRadius: '3px',
+                            padding: '2px 5px',
+                            borderRadius: '4px',
                             background: 'var(--sem-assist-bg)',
                             color: 'var(--sem-assist)',
                           }}
@@ -1408,10 +1240,10 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                         </span>
                         <span
                           style={{
-                            fontSize: '10px',
+                            fontSize: '11px',
                             fontWeight: 800,
-                            padding: '1px 4px',
-                            borderRadius: '3px',
+                            padding: '2px 5px',
+                            borderRadius: '4px',
                             background: 'var(--sem-fault-bg)',
                             color: 'var(--sem-fault)',
                           }}
@@ -1420,10 +1252,10 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                         </span>
                         <span
                           style={{
-                            fontSize: '10px',
+                            fontSize: '11px',
                             fontWeight: 800,
-                            padding: '1px 4px',
-                            borderRadius: '3px',
+                            padding: '2px 5px',
+                            borderRadius: '4px',
                             background: 'var(--bg-elevated)',
                             color: pmColor,
                             border: `1px solid ${pmColor}44`,
@@ -1448,7 +1280,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                           fontWeight: 800,
                         }}
                       >
-                        ⇄ SUB
+                        ⇄ DROP TO SUB
                       </span>
                     )}
 
@@ -1490,11 +1322,9 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                 justifyContent: 'space-between',
               }}
             >
-              <span>{locale === 'sl' ? `KLOP (${benchPlayers.length})` : `BENCH PLAYERS (${benchPlayers.length})`}</span>
+              <span>BENCH PLAYERS ({benchPlayers.length})</span>
               <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                {locale === 'sl'
-                  ? 'Pridrži 120ms in povleci na igrišče'
-                  : 'Hold 120ms & drag onto on-court to sub'}
+                Drag onto on-court card to substitute in
               </span>
             </div>
             <div
@@ -1503,7 +1333,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                 gridTemplateColumns: isPhoneLayout
                   ? 'repeat(2, 1fr)'
                   : 'repeat(auto-fill, minmax(210px, 1fr))',
-                gap: '10px',
+                gap: '12px',
               }}
             >
               {benchPlayers.map(({ player, jerseyNumber }) => {
@@ -1522,7 +1352,6 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   <button
                     key={player.id}
                     type="button"
-                    data-drop-bench-id={player.id}
                     draggable={true}
                     onDragStart={(e) => {
                       e.dataTransfer.setData('text/plain', player.id);
@@ -1558,18 +1387,12 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                       }
                       setDraggedPlayer(null);
                     }}
-                    onPointerDown={() => handleCardPointerDown(player, 'bench')}
-                    onPointerMove={handleCardPointerMove}
-                    onPointerUp={(e) => handleCardPointerUp(player, e)}
-                    onPointerCancel={() => {
-                      if (touchHoldTimerRef.current) clearTimeout(touchHoldTimerRef.current);
-                      isTouchDraggingRef.current = false;
-                      setDraggedPlayer(null);
-                      setDropTargetSlot(null);
-                      setDropTargetBenchId(null);
+                    onClick={() => {
+                      setSelectedPlayerId(player.id);
+                      setPfStep('choose_action');
                     }}
                     style={{
-                      padding: isPhoneLayout ? '10px 8px' : '12px 12px',
+                      padding: '12px 14px',
                       borderRadius: 'var(--radius-md)',
                       background: isDragOver
                         ? 'var(--sem-goal-bg)'
@@ -1579,25 +1402,23 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                         : '1px solid var(--border-subtle)',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: isPhoneLayout ? '8px' : '10px',
+                      gap: '12px',
                       textAlign: 'left',
                       position: 'relative',
                       opacity: isBeingDragged ? 0.45 : 1,
                       cursor: 'grab',
-                      overflow: 'hidden',
-                      touchAction: 'pan-y',
                     }}
                   >
                     <PlayerVisualPortrait
                       player={player}
                       jerseyNumber={jerseyNumber}
                       team={activeTeam}
-                      size={isPhoneLayout ? 46 : 52}
+                      size={54}
                     />
-                    <div style={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
                       <div
                         style={{
-                          fontSize: isPhoneLayout ? '13.5px' : '14.5px',
+                          fontSize: '14.5px',
                           fontWeight: 800,
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -1609,25 +1430,22 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                       </div>
                       <div
                         style={{
-                          fontSize: '11px',
+                          fontSize: '11.5px',
                           color: 'var(--text-secondary)',
                           marginBottom: '4px',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
                         }}
                       >
-                        #{jerseyNumber} · {player.primaryPosition}
+                        {player.primaryPosition} · #{jerseyNumber}
                       </div>
 
-                      {/* Stat summary with G and +/- */}
+                      {/* Stat summary with G, A, TF, and +/- */}
                       <div
                         className="tabular-nums"
-                        style={{ display: 'flex', gap: '3px', flexWrap: 'wrap' }}
+                        style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}
                       >
                         <span
                           style={{
-                            fontSize: '10px',
+                            fontSize: '10.5px',
                             fontWeight: 700,
                             padding: '1px 4px',
                             borderRadius: '3px',
@@ -1639,7 +1457,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                         </span>
                         <span
                           style={{
-                            fontSize: '10px',
+                            fontSize: '10.5px',
                             fontWeight: 700,
                             padding: '1px 4px',
                             borderRadius: '3px',
@@ -2078,42 +1896,21 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <button
-                type="button"
-                onClick={() => setActiveZoomMap('court')}
-                style={{
-                  minHeight: '38px',
-                  padding: '0 10px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'var(--accent-primary-subtle)',
-                  border: '1px solid var(--accent-primary)',
-                  fontWeight: 700,
-                  fontSize: '12px',
-                  color: 'var(--accent-primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                }}
-              >
-                ⛶ {locale === 'sl' ? 'Povečaj' : 'Enlarge'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setPfStep('choose_action')}
-                style={{
-                  minHeight: '38px',
-                  padding: '0 12px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'var(--bg-elevated)',
-                  border: '1px solid var(--border-strong)',
-                  fontWeight: 700,
-                  fontSize: '12px',
-                }}
-              >
-                ← Back
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setPfStep('choose_action')}
+              style={{
+                minHeight: '38px',
+                padding: '0 12px',
+                borderRadius: 'var(--radius-sm)',
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--border-strong)',
+                fontWeight: 700,
+                fontSize: '12px',
+              }}
+            >
+              ← Back
+            </button>
           </div>
 
           <HandballCourt
@@ -2171,42 +1968,21 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <button
-                type="button"
-                onClick={() => setActiveZoomMap('goal')}
-                style={{
-                  minHeight: '38px',
-                  padding: '0 10px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'var(--sem-goal-bg)',
-                  border: '1px solid var(--sem-goal)',
-                  fontWeight: 700,
-                  fontSize: '12px',
-                  color: 'var(--sem-goal)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                }}
-              >
-                ⛶ {locale === 'sl' ? 'Povečaj' : 'Enlarge'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setPfStep('pick_court_origin')}
-                style={{
-                  minHeight: '38px',
-                  padding: '0 12px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'var(--bg-elevated)',
-                  border: '1px solid var(--border-strong)',
-                  fontWeight: 700,
-                  fontSize: '12px',
-                }}
-              >
-                ← Court
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setPfStep('pick_court_origin')}
+              style={{
+                minHeight: '38px',
+                padding: '0 12px',
+                borderRadius: 'var(--radius-sm)',
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--border-strong)',
+                fontWeight: 700,
+                fontSize: '12px',
+              }}
+            >
+              ← Court
+            </button>
           </div>
 
           {/* Bounce Shot Toggle & Assisted By Picker */}
@@ -2450,41 +2226,15 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
           >
             <div
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
+                fontSize: '11.5px',
+                fontWeight: 800,
+                color: shotOrigin ? 'var(--sem-goal)' : 'var(--accent-primary)',
                 marginBottom: '6px',
               }}
             >
-              <div
-                style={{
-                  fontSize: '11.5px',
-                  fontWeight: 800,
-                  color: shotOrigin ? 'var(--sem-goal)' : 'var(--accent-primary)',
-                }}
-              >
-                {shotOrigin
-                  ? `✓ 1. Origin: ${t.zones[shotOrigin.zone]}`
-                  : '1. Tap Court Shot Origin'}
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveZoomMap('court')}
-                style={{
-                  padding: '2px 8px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'var(--bg-elevated)',
-                  border: '1px solid var(--border-subtle)',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  color: 'var(--accent-primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                }}
-              >
-                ⛶ {locale === 'sl' ? 'Povečaj' : 'Enlarge'}
-              </button>
+              {shotOrigin
+                ? `✓ 1. Origin: ${t.zones[shotOrigin.zone]}`
+                : '1. Tap Court Shot Origin'}
             </div>
             <HandballCourt
               mode="entry"
@@ -2517,40 +2267,14 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
           >
             <div
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
+                fontSize: '11.5px',
+                fontWeight: 800,
+                color: goalTarget ? 'var(--sem-goal)' : 'var(--accent-primary)',
               }}
             >
-              <div
-                style={{
-                  fontSize: '11.5px',
-                  fontWeight: 800,
-                  color: goalTarget ? 'var(--sem-goal)' : 'var(--accent-primary)',
-                }}
-              >
-                {goalTarget
-                  ? `✓ 2. Target: ${t.goalCells[goalTarget.cell]}`
-                  : '2. Tap 3×2m Goal Target'}
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveZoomMap('goal')}
-                style={{
-                  padding: '2px 8px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'var(--bg-elevated)',
-                  border: '1px solid var(--border-subtle)',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  color: 'var(--sem-goal)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                }}
-              >
-                ⛶ {locale === 'sl' ? 'Povečaj' : 'Enlarge'}
-              </button>
+              {goalTarget
+                ? `✓ 2. Target: ${t.goalCells[goalTarget.cell]}`
+                : '2. Tap 3×2m Goal Target'}
             </div>
             <HandballGoal
               mode="entry"
@@ -3137,64 +2861,6 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
           </div>
         )}
       </div>
-
-      {/* Fullscreen Zoomable Map Lightbox */}
-      {activeZoomMap === 'court' && (
-        <ZoomableMapModal
-          isOpen={true}
-          onClose={() => setActiveZoomMap(null)}
-          title={locale === 'sl' ? 'Interaktivno rokometno igrišče (Cel zaslon)' : 'Interactive Handball Court (Full Screen)'}
-          subtitle={locale === 'sl' ? 'Povečava in premik · Tapni cono za izbiro meta' : 'Zoom & pan · Tap zone to select shot origin'}
-        >
-          <div style={{ width: '100%', maxWidth: '640px' }}>
-            <HandballCourt
-              mode="entry"
-              locale={locale}
-              selectedOrigin={shotOrigin}
-              onSelectOrigin={(coords, suggestedPos) => {
-                setShotOrigin(coords);
-                setAutoSuggestedSlot(suggestedPos);
-                if (coords.zone === 'FAST_BREAK') setAttackPhase('fast_break');
-                if (liveEntryMode === 'player_first') {
-                  setPfStep('pick_goal_target');
-                } else {
-                  const onCourtByPos = activeTeamCourt?.onCourtByPosition;
-                  if (onCourtByPos && onCourtByPos[suggestedPos]) {
-                    setSelectedPlayerId(onCourtByPos[suggestedPos]);
-                  }
-                }
-                setActiveZoomMap(null);
-              }}
-              teamColor={activeTeam.primaryColorHex}
-            />
-          </div>
-        </ZoomableMapModal>
-      )}
-
-      {activeZoomMap === 'goal' && (
-        <ZoomableMapModal
-          isOpen={true}
-          onClose={() => setActiveZoomMap(null)}
-          title={locale === 'sl' ? 'Okvir gola 3×2m (Cel zaslon)' : '3×2m Goal Frame (Full Screen)'}
-          subtitle={locale === 'sl' ? 'Povečava in premik · Tapni tarčo v golu' : 'Zoom & pan · Tap target inside frame'}
-        >
-          <div style={{ width: '100%', maxWidth: '640px' }}>
-            <HandballGoal
-              mode="entry"
-              locale={locale}
-              selectedTarget={goalTarget}
-              onSelectTarget={(coords) => {
-                setGoalTarget(coords);
-                if (liveEntryMode === 'player_first' && pfStep === 'pick_goal_target') {
-                  commitShotWithDetails(pendingOutcome, shotOrigin ?? undefined, coords);
-                }
-                setActiveZoomMap(null);
-              }}
-              teamColor={activeTeam.primaryColorHex}
-            />
-          </div>
-        </ZoomableMapModal>
-      )}
     </div>
   );
 };

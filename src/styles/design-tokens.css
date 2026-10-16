@@ -121,49 +121,6 @@
   --sem-assist-bg: rgba(8, 145, 178, 0.14);
 }
 
-/* 6 High-Contrast Vibrant Color Themes (Blue, Emerald, Amber, Rose, Violet, Lime) */
-[data-color-theme='blue'] {
-  --accent-primary: #38bdf8;
-  --accent-primary-hover: #7dd3fc;
-  --accent-primary-subtle: rgba(56, 189, 248, 0.18);
-  --border-focus: #38bdf8;
-}
-
-[data-color-theme='emerald'] {
-  --accent-primary: #00e5a3;
-  --accent-primary-hover: #34d399;
-  --accent-primary-subtle: rgba(0, 229, 163, 0.18);
-  --border-focus: #00e5a3;
-}
-
-[data-color-theme='amber'] {
-  --accent-primary: #f59e0b;
-  --accent-primary-hover: #fbbf24;
-  --accent-primary-subtle: rgba(245, 158, 11, 0.18);
-  --border-focus: #f59e0b;
-}
-
-[data-color-theme='rose'] {
-  --accent-primary: #f43f5e;
-  --accent-primary-hover: #fb7185;
-  --accent-primary-subtle: rgba(244, 63, 94, 0.18);
-  --border-focus: #f43f5e;
-}
-
-[data-color-theme='violet'] {
-  --accent-primary: #a855f7;
-  --accent-primary-hover: #c084fc;
-  --accent-primary-subtle: rgba(168, 85, 247, 0.18);
-  --border-focus: #a855f7;
-}
-
-[data-color-theme='lime'] {
-  --accent-primary: #a3e635;
-  --accent-primary-hover: #bef264;
-  --accent-primary-subtle: rgba(163, 230, 53, 0.18);
-  --border-focus: #a3e635;
-}
-
 *,
 *::before,
 *::after {
