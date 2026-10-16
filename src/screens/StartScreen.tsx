@@ -16,6 +16,7 @@ export const StartScreen: React.FC<{ isPhoneLayout: boolean }> = ({
   isPhoneLayout,
 }) => {
   const {
+    locale,
     teams,
     players,
     matches,
@@ -23,8 +24,6 @@ export const StartScreen: React.FC<{ isPhoneLayout: boolean }> = ({
     setActiveMatchId,
     activeEvents,
     clockSec,
-    liveEntryMode,
-    setLiveEntryMode,
     setActiveTab,
   } = useAppStore();
 
@@ -150,7 +149,7 @@ export const StartScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                 {isPhoneLayout ? ourTeam.shortCode : ourTeam.name}
               </div>
               <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                Our Team
+                {locale === 'sl' ? 'Naša ekipa' : 'Our Team'}
               </div>
             </div>
           </div>
@@ -204,7 +203,7 @@ export const StartScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                 {isPhoneLayout ? oppTeam.shortCode : oppTeam.name}
               </div>
               <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                Opponent
+                {locale === 'sl' ? 'Nasprotnik' : 'Opponent'}
               </div>
             </div>
             <TeamShapeIcon
@@ -217,255 +216,165 @@ export const StartScreen: React.FC<{ isPhoneLayout: boolean }> = ({
         </div>
       </div>
 
-      {/* Choose Live Input Mode Section (2 Ways to Input Data During Match) */}
+      {/* Single Live Match Entry Panel */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <div
+        <button
+          type="button"
+          onClick={() => setActiveTab('live')}
           style={{
-            fontSize: '13px',
-            fontWeight: 800,
-            color: 'var(--text-secondary)',
-            letterSpacing: '0.03em',
+            padding: isPhoneLayout ? '18px 16px' : '22px 24px',
+            borderRadius: 'var(--radius-lg)',
+            background: 'var(--bg-surface)',
+            border: '2px solid var(--sem-goal)',
+            textAlign: 'left',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            cursor: 'pointer',
+            boxShadow: '0 4px 20px rgba(0, 229, 163, 0.08)',
           }}
         >
-          CHOOSE YOUR LIVE MATCH INPUT MODE
-        </div>
-
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: isPhoneLayout ? '1fr' : '1fr 1fr',
-            gap: '14px',
-          }}
-        >
-          {/* INPUT MODE 1: PLAYER-FIRST VISUAL FLOW */}
-          <button
-            type="button"
-            onClick={() => {
-              setLiveEntryMode('player_first');
-              setActiveTab('live');
-            }}
-            style={{
-              padding: '18px',
-              borderRadius: 'var(--radius-lg)',
-              background:
-                liveEntryMode === 'player_first'
-                  ? 'var(--bg-elevated)'
-                  : 'var(--bg-surface)',
-              border:
-                liveEntryMode === 'player_first'
-                  ? '2px solid var(--sem-goal)'
-                  : '1.5px solid var(--border-strong)',
-              textAlign: 'left',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              gap: '14px',
-            }}
-          >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: 800,
-                    padding: '3px 8px',
-                    borderRadius: '6px',
-                    background: 'var(--sem-goal-bg)',
-                    color: 'var(--sem-goal)',
-                  }}
-                >
-                  MODE 1 · STEP-BY-STEP VISUAL
-                </span>
-                <IconGoalNet size={22} color="var(--sem-goal)" />
-              </div>
-
-              <div style={{ fontSize: '17px', fontWeight: 800 }}>
-                1. Player Portraits First → Action → Court → Goal
-              </div>
-              <div
-                style={{
-                  fontSize: '12.5px',
-                  color: 'var(--text-secondary)',
-                  lineHeight: 1.45,
-                }}
-              >
-                Shows only players and their portraits on screen. Tap a player to
-                open Goal / Bounce / Assist / Turnover buttons, then pick where
-                it was scored from on the court, then tap the goal frame.
-              </div>
-            </div>
-
-            {/* Visual Step Diagram Preview inside the button */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div
               style={{
-                padding: '10px',
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--bg-canvas)',
-                border: '1px solid var(--border-subtle)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                gap: '6px',
               }}
             >
-              <div style={{ display: 'flex', gap: '4px' }}>
-                {samplePlayers.slice(0, 2).map((p) => (
-                  <PlayerVisualPortrait
-                    key={p.id}
-                    player={p}
-                    jerseyNumber={p.defaultJerseyNumber}
-                    team={ourTeam}
-                    size={38}
-                  />
-                ))}
-              </div>
-              <span style={{ color: 'var(--sem-goal)', fontWeight: 800 }}>→</span>
-              <div
+              <span
                 style={{
-                  padding: '4px 8px',
+                  fontSize: '11.5px',
+                  fontWeight: 800,
+                  padding: '3px 9px',
                   borderRadius: '6px',
                   background: 'var(--sem-goal-bg)',
                   color: 'var(--sem-goal)',
-                  fontSize: '11px',
-                  fontWeight: 800,
+                  letterSpacing: '0.04em',
                 }}
               >
-                GOAL / TF
-              </div>
-              <span style={{ color: 'var(--sem-goal)', fontWeight: 800 }}>→</span>
-              <MiniCourtZoneDiagram highlight="9m" size={34} color="var(--sem-goal)" />
+                {locale === 'sl'
+                  ? 'VNOS TEKME V ŽIVO'
+                  : 'LIVE MATCH ENTRY FLOW'}
+              </span>
+              <IconGoalNet size={24} color="var(--sem-goal)" />
             </div>
 
+            <div style={{ fontSize: isPhoneLayout ? '18px' : '20px', fontWeight: 800 }}>
+              {locale === 'sl'
+                ? 'Portreti igralcev → Akcija → Mesto meta (2s potrditev) → Okvir gola'
+                : 'Player Portraits → Action Menu → Court Origin (2s Confirm) → Goal Target'}
+            </div>
             <div
               style={{
-                padding: '10px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--sem-goal)',
-                color: '#080c14',
-                fontWeight: 800,
-                fontSize: '13.5px',
-                textAlign: 'center',
+                fontSize: '13px',
+                color: 'var(--text-secondary)',
+                lineHeight: 1.5,
               }}
             >
-              ▶ Start Live Match (Player-First Mode)
+              {locale === 'sl'
+                ? 'Hitro beleženje zadetkov, metov od tal, podaj in tehničnih napak. Klik na klop za takojšnjo menjavo igralca.'
+                : 'Rapid tracking of goals, bounce shots, assists, and turnovers. Click any substitute to swap them onto the court.'}
             </div>
-          </button>
+          </div>
 
-          {/* INPUT MODE 2: ALL-IN-ONE COURT + PLAYERS VIEW */}
-          <button
-            type="button"
-            onClick={() => {
-              setLiveEntryMode('all_in_one');
-              setActiveTab('live');
-            }}
+          {/* Visual Step Diagram Preview */}
+          <div
             style={{
-              padding: '18px',
-              borderRadius: 'var(--radius-lg)',
-              background:
-                liveEntryMode === 'all_in_one'
-                  ? 'var(--bg-elevated)'
-                  : 'var(--bg-surface)',
-              border:
-                liveEntryMode === 'all_in_one'
-                  ? '2px solid var(--accent-primary)'
-                  : '1.5px solid var(--border-strong)',
-              textAlign: 'left',
+              padding: '10px 14px',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--bg-canvas)',
+              border: '1px solid var(--border-subtle)',
               display: 'flex',
-              flexDirection: 'column',
+              alignItems: 'center',
               justifyContent: 'space-between',
-              gap: '14px',
+              gap: '8px',
+              flexWrap: 'wrap',
             }}
           >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: 800,
-                    padding: '3px 8px',
-                    borderRadius: '6px',
-                    background: 'var(--accent-primary-subtle)',
-                    color: 'var(--accent-primary)',
-                  }}
-                >
-                  MODE 2 · PRO ALL-IN-ONE
-                </span>
-                <IconBounceShot size={22} color="var(--accent-primary)" />
-              </div>
-
-              <div style={{ fontSize: '17px', fontWeight: 800 }}>
-                2. All Players + Court & Goal Charts Together
-              </div>
-              <div
-                style={{
-                  fontSize: '12.5px',
-                  color: 'var(--text-secondary)',
-                  lineHeight: 1.45,
-                }}
-              >
-                Displays all on-court players, the interactive court map, 3×3
-                goal target, bounce shot toggle, assist picker, and live feed on
-                a single unified screen.
-              </div>
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+              {samplePlayers.slice(0, 2).map((p) => (
+                <PlayerVisualPortrait
+                  key={p.id}
+                  player={p}
+                  jerseyNumber={p.defaultJerseyNumber}
+                  team={ourTeam}
+                  size={38}
+                />
+              ))}
             </div>
-
-            {/* Visual Diagram Preview inside the button */}
+            <span style={{ color: 'var(--sem-goal)', fontWeight: 800 }}>→</span>
             <div
               style={{
-                padding: '10px',
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--bg-canvas)',
-                border: '1px solid var(--border-subtle)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-around',
-                gap: '8px',
-              }}
-            >
-              <MiniCourtZoneDiagram highlight="6m" size={40} color="var(--accent-primary)" />
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  color: 'var(--sem-bounce)',
-                }}
-              >
-                <IconBounceShot size={18} />
-                <span>Bounce + Assist</span>
-              </div>
-              <IconAssistPass size={20} />
-            </div>
-
-            <div
-              style={{
-                padding: '10px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--accent-primary)',
-                color: '#080c14',
+                padding: '4px 8px',
+                borderRadius: '6px',
+                background: 'var(--sem-goal-bg)',
+                color: 'var(--sem-goal)',
+                fontSize: '11.5px',
                 fontWeight: 800,
-                fontSize: '13.5px',
-                textAlign: 'center',
               }}
             >
-              ▶ Start Live Match (All-in-One Mode)
+              {locale === 'sl' ? 'GOL / TF' : 'GOAL / TF'}
             </div>
-          </button>
-        </div>
+            <span style={{ color: 'var(--sem-goal)', fontWeight: 800 }}>→</span>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '4px 8px',
+                borderRadius: '6px',
+                background: 'rgba(56, 189, 248, 0.12)',
+                color: 'var(--accent-primary)',
+                fontSize: '11px',
+                fontWeight: 800,
+              }}
+            >
+              <MiniCourtZoneDiagram highlight="9m" size={24} color="var(--accent-primary)" />
+              <span>{locale === 'sl' ? 'Igrišče (2s)' : 'Court (2s)'}</span>
+            </div>
+            <span style={{ color: 'var(--sem-goal)', fontWeight: 800 }}>→</span>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '4px 8px',
+                borderRadius: '6px',
+                background: 'var(--sem-goal-bg)',
+                color: 'var(--sem-goal)',
+                fontSize: '11px',
+                fontWeight: 800,
+              }}
+            >
+              <IconGoalNet size={18} color="var(--sem-goal)" />
+              <span>{locale === 'sl' ? 'Gol (2s)' : 'Goal (2s)'}</span>
+            </div>
+          </div>
+
+          <div
+            style={{
+              padding: '12px 18px',
+              borderRadius: 'var(--radius-sm)',
+              background: 'var(--sem-goal)',
+              color: '#080c14',
+              fontWeight: 800,
+              fontSize: '14px',
+              textAlign: 'center',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+            }}
+          >
+            <span>▶</span>
+            <span>
+              {locale === 'sl'
+                ? 'Začni beleženje tekme v živo'
+                : 'Start Live Match Tracking'}
+            </span>
+          </div>
+        </button>
       </div>
 
       {/* Quick Navigation Cards to Stats, Pre-Match Scouting, Teams & Reports */}
@@ -488,16 +397,19 @@ export const StartScreen: React.FC<{ isPhoneLayout: boolean }> = ({
             display: 'flex',
             flexDirection: 'column',
             gap: '6px',
+            cursor: 'pointer',
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '13.5px', fontWeight: 800 }}>
-              Match Stats
+              {locale === 'sl' ? 'Statistika tekme' : 'Match Stats'}
             </span>
             <MiniCourtZoneDiagram highlight="wing" size={28} color="var(--sem-goal)" />
           </div>
           <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
-            Visual bars, court zones, bounce shots & GK saves
+            {locale === 'sl'
+              ? 'Grafični stolpci, cone igrišča, streli od tal in obrambe'
+              : 'Visual bars, court zones, bounce shots & GK saves'}
           </span>
         </button>
 
@@ -513,16 +425,19 @@ export const StartScreen: React.FC<{ isPhoneLayout: boolean }> = ({
             display: 'flex',
             flexDirection: 'column',
             gap: '6px',
+            cursor: 'pointer',
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '13.5px', fontWeight: 800 }}>
-              Pre-Match Scout
+              {locale === 'sl' ? 'Priprava na tekmo' : 'Pre-Match Scout'}
             </span>
             <IconGkSave size={20} color="var(--sem-save)" />
           </div>
           <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
-            Opponent profile, shooter cards & lineup confirm
+            {locale === 'sl'
+              ? 'Profil nasprotnika, kartice strelcev in potrditev postave'
+              : 'Opponent profile, shooter cards & lineup confirm'}
           </span>
         </button>
 
@@ -538,16 +453,19 @@ export const StartScreen: React.FC<{ isPhoneLayout: boolean }> = ({
             display: 'flex',
             flexDirection: 'column',
             gap: '6px',
+            cursor: 'pointer',
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '13.5px', fontWeight: 800 }}>
-              Teams & Rosters
+              {locale === 'sl' ? 'Ekipe in postave' : 'Teams & Rosters'}
             </span>
             <IconAssistPass size={20} color="var(--sem-assist)" />
           </div>
           <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
-            Own & opponent squads, jersey # & CSV import
+            {locale === 'sl'
+              ? 'Domača in gostujoča ekipa, logotipi in uvoz'
+              : 'Own & opponent squads, jersey # & CSV import'}
           </span>
         </button>
 
@@ -563,16 +481,19 @@ export const StartScreen: React.FC<{ isPhoneLayout: boolean }> = ({
             display: 'flex',
             flexDirection: 'column',
             gap: '6px',
+            cursor: 'pointer',
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '13.5px', fontWeight: 800 }}>
-              Export & PDF
+              {locale === 'sl' ? 'Izvoz in PDF' : 'Export & PDF'}
             </span>
             <IconGoalNet size={20} color="var(--sem-bounce)" />
           </div>
           <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
-            Print PDF report, share link, CSV & JSON export
+            {locale === 'sl'
+              ? 'Tiskanje PDF poročila, deljenje povezave in CSV izvoz'
+              : 'Print PDF report, share link, CSV & JSON export'}
           </span>
         </button>
       </div>

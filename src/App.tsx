@@ -72,12 +72,36 @@ const AppShellContent: React.FC = () => {
   }, [searchQuery, players, teams, matches]);
 
   const NAV_ITEMS: Array<{ id: ActiveTab; label: string; shortLabel: string }> = [
-    { id: 'start', label: 'Start', shortLabel: 'Start' },
-    { id: 'live', label: t.nav.liveMode, shortLabel: 'Live' },
-    { id: 'stats', label: t.common.matchHub, shortLabel: 'Stats' },
-    { id: 'prematch', label: t.nav.preMatch, shortLabel: 'Scout' },
-    { id: 'teams', label: t.nav.teams, shortLabel: 'Teams' },
-    { id: 'reports', label: t.nav.reports, shortLabel: 'Export' },
+    {
+      id: 'start',
+      label: locale === 'sl' ? 'Začetek' : 'Start',
+      shortLabel: locale === 'sl' ? 'Začetek' : 'Start',
+    },
+    {
+      id: 'live',
+      label: t.nav.liveMode,
+      shortLabel: locale === 'sl' ? 'V živo' : 'Live',
+    },
+    {
+      id: 'stats',
+      label: t.common.matchHub,
+      shortLabel: locale === 'sl' ? 'Statistika' : 'Stats',
+    },
+    {
+      id: 'prematch',
+      label: t.nav.preMatch,
+      shortLabel: locale === 'sl' ? 'Priprava' : 'Scout',
+    },
+    {
+      id: 'teams',
+      label: t.nav.teams,
+      shortLabel: locale === 'sl' ? 'Ekipe' : 'Teams',
+    },
+    {
+      id: 'reports',
+      label: t.nav.reports,
+      shortLabel: locale === 'sl' ? 'Izvoz' : 'Export',
+    },
   ];
 
   return (

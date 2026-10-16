@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ZoomableMapModal } from '../components/modals/ZoomableMapModal';
 import { HandballCourt } from '../components/design-system/HandballCourt';
 import { HandballGoal } from '../components/design-system/HandballGoal';
 import {
@@ -85,14 +86,27 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
   const activeTeam = selectedTeamId === ourTeam.id ? ourTeam : oppTeam;
   const defendingTeam = selectedTeamId === ourTeam.id ? oppTeam : ourTeam;
 
-  // Drag & drop live substitution state
-  const [draggedPlayer, setDraggedPlayer] = useState<{
-    id: string;
-    source: 'on_court' | 'bench';
-    slot?: PositionCode;
+  // Click-based live substitution state
+  const [substitutingBenchPlayer, setSubstitutingBenchPlayer] = useState<{
+    player: (typeof players)[0];
+    jerseyNumber: number;
   } | null>(null);
-  const [dropTargetSlot, setDropTargetSlot] = useState<PositionCode | null>(null);
-  const [dropTargetBenchId, setDropTargetBenchId] = useState<string | null>(null);
+
+  // Zoomable fullscreen map modal state
+  const [activeZoomMap, setActiveZoomMap] = useState<'court' | 'goal' | null>(null);
+
+  // 2-second auto-continue timers & countdown display
+  const originAutoTimerRef = useRef<number | null>(null);
+  const targetAutoTimerRef = useRef<number | null>(null);
+  const [originCountdown, setOriginCountdown] = useState<number | null>(null);
+  const [targetCountdown, setTargetCountdown] = useState<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (originAutoTimerRef.current) window.clearTimeout(originAutoTimerRef.current);
+      if (targetAutoTimerRef.current) window.clearTimeout(targetAutoTimerRef.current);
+    };
+  }, []);
 
   const courtStates = useMemo(
     () => deriveCourtStateAtClock(activeMatch, activeEvents, clockSec, players),
@@ -167,6 +181,9 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
   const [editClockStr, setEditClockStr] = useState<string>('00:00');
 
   useEffect(() => {
+    if (pfStep === 'select_player') {
+      return;
+    }
     const onCourtMap = activeTeamCourt?.onCourtByPosition;
     if (!onCourtMap) return;
     const currentOnCourtIds = Object.values(onCourtMap).filter(Boolean) as string[];
@@ -175,7 +192,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
         onCourtMap.CB || onCourtMap.LB || currentOnCourtIds[0] || null
       );
     }
-  }, [selectedTeamId, activeTeamCourt, selectedPlayerId]);
+  }, [selectedTeamId, activeTeamCourt, selectedPlayerId, pfStep]);
 
   const currentHalf: 1 | 2 =
     clockSec >= activeMatch.format.halfDurationSec ? 2 : 1;
@@ -339,6 +356,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
     setIsBounceShot(false);
     setAssistingPlayerId(null);
     setAutoSuggestedSlot(null);
+    setSelectedPlayerId(null);
     setPfStep('select_player');
     if (attackPhase === 'fast_break' || attackPhase === 'second_wave') {
       setAttackPhase('positional');
@@ -404,12 +422,58 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
     );
 
     setOpenActionSheet(null);
+    setSelectedPlayerId(null);
     setPfStep('select_player');
 
     // Possession-changing event: turnover (technical fault) switches immediately to Team B!
     if (category === 'technical_fault') {
       const otherTeam = activeTeam.id === ourTeam.id ? oppTeam : ourTeam;
       setSelectedTeamId(otherTeam.id);
+    }
+  };
+
+  const handleCourtOriginSelect = (coords: ShotOriginCoords) => {
+    setShotOrigin(coords);
+    if (coords.zone === 'FAST_BREAK') {
+      setAttackPhase('fast_break');
+    }
+    if (originAutoTimerRef.current) {
+      window.clearTimeout(originAutoTimerRef.current);
+    }
+    setOriginCountdown(2);
+    originAutoTimerRef.current = window.setTimeout(() => {
+      setOriginCountdown(null);
+      setPfStep('pick_goal_target');
+    }, 2000);
+  };
+
+  const handleConfirmCourtOrigin = () => {
+    if (originAutoTimerRef.current) {
+      window.clearTimeout(originAutoTimerRef.current);
+    }
+    setOriginCountdown(null);
+    setPfStep('pick_goal_target');
+  };
+
+  const handleGoalTargetSelect = (coords: GoalTargetCoords) => {
+    setGoalTarget(coords);
+    if (targetAutoTimerRef.current) {
+      window.clearTimeout(targetAutoTimerRef.current);
+    }
+    setTargetCountdown(2);
+    targetAutoTimerRef.current = window.setTimeout(() => {
+      setTargetCountdown(null);
+      commitShotWithDetails(pendingOutcome, shotOrigin ?? undefined, coords);
+    }, 2000);
+  };
+
+  const handleConfirmGoalTarget = () => {
+    if (targetAutoTimerRef.current) {
+      window.clearTimeout(targetAutoTimerRef.current);
+    }
+    setTargetCountdown(null);
+    if (goalTarget) {
+      commitShotWithDetails(pendingOutcome, shotOrigin ?? undefined, goalTarget);
     }
   };
 
@@ -519,6 +583,24 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
         >
           <button
             type="button"
+            onClick={() => setClockSec(Math.max(0, clockSec - 10))}
+            title="-10 seconds"
+            style={{
+              minHeight: '38px',
+              padding: '0 8px',
+              borderRadius: 'var(--radius-sm)',
+              background: 'var(--bg-elevated)',
+              border: '1px solid var(--border-strong)',
+              fontSize: '11.5px',
+              fontWeight: 800,
+              cursor: 'pointer',
+            }}
+          >
+            -10s
+          </button>
+
+          <button
+            type="button"
             onClick={() => setIsClockRunning(!isClockRunning)}
             style={{
               minHeight: '38px',
@@ -550,6 +632,24 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
             >
               H{currentHalf}
             </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setClockSec(clockSec + 10)}
+            title="+10 seconds"
+            style={{
+              minHeight: '38px',
+              padding: '0 8px',
+              borderRadius: 'var(--radius-sm)',
+              background: 'var(--bg-elevated)',
+              border: '1px solid var(--border-strong)',
+              fontSize: '11.5px',
+              fontWeight: 800,
+              cursor: 'pointer',
+            }}
+          >
+            +10s
           </button>
 
           <button
@@ -1038,12 +1138,14 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                     letterSpacing: '0.04em',
                   }}
                 >
-                  ON COURT (7 PLAYERS · {activeTeam.name.toUpperCase()})
+                  {locale === 'sl'
+                    ? `NA IGRIŠČU (7 IGRALCEV · ${activeTeam.name.toUpperCase()})`
+                    : `ON COURT (7 PLAYERS · ${activeTeam.name.toUpperCase()})`}
                 </span>
                 <span
                   style={{
-                    fontSize: '10.5px',
-                    padding: '2px 6px',
+                    fontSize: '11px',
+                    padding: '2px 8px',
                     borderRadius: '4px',
                     background: 'var(--bg-elevated)',
                     color: 'var(--accent-primary)',
@@ -1051,7 +1153,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                     border: '1px solid var(--border-subtle)',
                   }}
                 >
-                  ⇄ Drag & Drop to Sub
+                  {locale === 'sl' ? 'Tapni igralca za vnos akcije' : 'Tap player to log action'}
                 </span>
               </div>
 
@@ -1071,10 +1173,11 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   gap: '6px',
                   fontSize: '12px',
                   fontWeight: 700,
+                  cursor: 'pointer',
                 }}
               >
                 <IconTimeoutCard size={17} />
-                <span>Team Timeout</span>
+                <span>{locale === 'sl' ? 'Minuta odmora' : 'Team Timeout'}</span>
               </button>
             </div>
 
@@ -1092,8 +1195,6 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                 const susp = activeTeamCourt?.activeSuspensions.find(
                   (s) => s.playerId === player.id
                 );
-                const isDragOver = dropTargetSlot === slot;
-                const isBeingDragged = draggedPlayer?.id === player.id;
                 const pm = st?.plusMinus ?? 0;
                 const pmColor =
                   pm > 0
@@ -1106,51 +1207,6 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   <button
                     key={player.id}
                     type="button"
-                    draggable={true}
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData('text/plain', player.id);
-                      setDraggedPlayer({
-                        id: player.id,
-                        source: 'on_court',
-                        slot,
-                      });
-                    }}
-                    onDragEnd={() => {
-                      setDraggedPlayer(null);
-                      setDropTargetSlot(null);
-                      setDropTargetBenchId(null);
-                    }}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setDropTargetSlot(slot);
-                    }}
-                    onDragLeave={() => {
-                      if (dropTargetSlot === slot) setDropTargetSlot(null);
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      setDropTargetSlot(null);
-                      if (!draggedPlayer) return;
-                      if (draggedPlayer.source === 'bench') {
-                        performSubstitution(
-                          activeTeam.id,
-                          player.id,
-                          draggedPlayer.id,
-                          slot
-                        );
-                      } else if (
-                        draggedPlayer.source === 'on_court' &&
-                        draggedPlayer.id !== player.id
-                      ) {
-                        performSubstitution(
-                          activeTeam.id,
-                          player.id,
-                          draggedPlayer.id,
-                          slot
-                        );
-                      }
-                      setDraggedPlayer(null);
-                    }}
                     onClick={() => {
                       setSelectedPlayerId(player.id);
                       setPfStep('choose_action');
@@ -1159,148 +1215,144 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                       padding: isPhoneLayout ? '14px 12px' : '16px 14px',
                       minHeight: isPhoneLayout ? '110px' : '120px',
                       borderRadius: 'var(--radius-lg)',
-                      background: isDragOver
-                        ? 'var(--sem-goal-bg)'
-                        : 'var(--bg-surface)',
-                      border: isDragOver
-                        ? '2px dashed var(--sem-goal)'
-                        : `1.5px solid ${activeTeam.primaryColorHex}77`,
+                      background: 'var(--bg-surface)',
+                      border: `1.5px solid ${activeTeam.primaryColorHex}77`,
                       display: 'flex',
                       alignItems: 'center',
                       gap: '12px',
                       textAlign: 'left',
                       position: 'relative',
-                      opacity: isBeingDragged ? 0.45 : 1,
-                      cursor: 'grab',
-                      transition: 'border 160ms, background 160ms',
+                      cursor: 'pointer',
+                      transition: 'border 160ms, background 160ms, transform 120ms',
                     }}
                   >
                     <PlayerVisualPortrait
                       player={player}
                       jerseyNumber={jerseyNumber}
                       team={activeTeam}
-                      slot={slot}
-                      size={isPhoneLayout ? 64 : 70}
+                      size={isPhoneLayout ? 54 : 64}
                     />
+
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div
                         style={{
-                          fontSize: '16px',
-                          fontWeight: 800,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          color: 'var(--text-primary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '4px',
                         }}
                       >
-                        {player.lastName}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: '12px',
-                          color: 'var(--text-secondary)',
-                          marginBottom: '6px',
-                        }}
-                      >
-                        {player.firstName} · <strong>{slot}</strong>
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 800,
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            background: 'var(--bg-canvas)',
+                            color: 'var(--accent-primary)',
+                            border: '1px solid var(--border-subtle)',
+                          }}
+                        >
+                          {slot}
+                        </span>
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                          {player.handedness}-Hand
+                        </span>
                       </div>
 
-                      {/* Colorful Mini Stat Pills: G, A, TF, and +/- */}
                       <div
-                        className="tabular-nums"
+                        style={{
+                          fontSize: isPhoneLayout ? '14.5px' : '16px',
+                          fontWeight: 800,
+                          lineHeight: 1.25,
+                          marginTop: '4px',
+                        }}
+                      >
+                        #{jerseyNumber} {player.lastName}
+                      </div>
+
+                      <div
+                        style={{
+                          fontSize: '11px',
+                          color: 'var(--text-secondary)',
+                          marginTop: '2px',
+                        }}
+                      >
+                        {player.firstName}
+                      </div>
+
+                      <div
                         style={{
                           display: 'flex',
-                          gap: '4px',
+                          alignItems: 'center',
+                          gap: '6px',
+                          marginTop: '6px',
+                          fontSize: '11px',
+                          fontWeight: 700,
                           flexWrap: 'wrap',
                         }}
                       >
                         <span
+                          className="tabular-nums"
                           style={{
-                            fontSize: '11px',
-                            fontWeight: 800,
-                            padding: '2px 5px',
-                            borderRadius: '4px',
-                            background: 'var(--sem-goal-bg)',
-                            color: 'var(--sem-goal)',
+                            color:
+                              (st?.goals ?? 0) > 0
+                                ? 'var(--sem-goal)'
+                                : 'var(--text-secondary)',
                           }}
                         >
                           {st?.goals ?? 0}/{st?.shots ?? 0} G
                         </span>
+                        <span>·</span>
                         <span
+                          className="tabular-nums"
                           style={{
-                            fontSize: '11px',
-                            fontWeight: 800,
-                            padding: '2px 5px',
-                            borderRadius: '4px',
-                            background: 'var(--sem-assist-bg)',
-                            color: 'var(--sem-assist)',
+                            color:
+                              (st?.assists ?? 0) > 0
+                                ? 'var(--sem-assist)'
+                                : 'var(--text-secondary)',
                           }}
                         >
                           {st?.assists ?? 0} A
                         </span>
+                        <span>·</span>
                         <span
+                          className="tabular-nums"
                           style={{
-                            fontSize: '11px',
-                            fontWeight: 800,
-                            padding: '2px 5px',
-                            borderRadius: '4px',
-                            background: 'var(--sem-fault-bg)',
-                            color: 'var(--sem-fault)',
+                            color:
+                              (st?.technicalFaults ?? 0) > 0
+                                ? 'var(--sem-fault)'
+                                : 'var(--text-secondary)',
                           }}
                         >
                           {st?.technicalFaults ?? 0} TF
                         </span>
+                        <span>·</span>
                         <span
-                          style={{
-                            fontSize: '11px',
-                            fontWeight: 800,
-                            padding: '2px 5px',
-                            borderRadius: '4px',
-                            background: 'var(--bg-elevated)',
-                            color: pmColor,
-                            border: `1px solid ${pmColor}44`,
-                          }}
+                          className="tabular-nums"
+                          style={{ color: pmColor }}
                         >
                           {pm > 0 ? `+${pm}` : pm} +/-
                         </span>
                       </div>
                     </div>
 
-                    {isDragOver && (
-                      <span
+                    {susp && (
+                      <div
                         style={{
                           position: 'absolute',
                           top: '6px',
                           right: '6px',
                           padding: '2px 6px',
                           borderRadius: '4px',
-                          background: 'var(--sem-goal)',
-                          color: '#020408',
-                          fontSize: '10px',
-                          fontWeight: 800,
-                        }}
-                      >
-                        ⇄ DROP TO SUB
-                      </span>
-                    )}
-
-                    {susp && !isDragOver && (
-                      <span
-                        className="tabular-nums"
-                        style={{
-                          position: 'absolute',
-                          top: '6px',
-                          right: '6px',
-                          padding: '2px 6px',
-                          borderRadius: '999px',
                           background: 'var(--sem-fault)',
-                          color: '#fff',
+                          color: '#ffffff',
                           fontSize: '10px',
                           fontWeight: 800,
                         }}
                       >
-                        2′ {formatClock(susp.remainingSec)}
-                      </span>
+                        2' ({susp.remainingSec}s)
+                      </div>
                     )}
                   </button>
                 );
@@ -1308,7 +1360,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
             </div>
           </div>
 
-          {/* BENCH PLAYER PORTRAIT CARDS */}
+          {/* BENCH PLAYER CARDS (CLICK TO SUBSTITUTE IN) */}
           <div>
             <div
               style={{
@@ -1320,11 +1372,13 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '8px',
               }}
             >
-              <span>BENCH PLAYERS ({benchPlayers.length})</span>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                Drag onto on-court card to substitute in
+              <span>{locale === 'sl' ? `REZERVNA KLOP (${benchPlayers.length})` : `BENCH PLAYERS (${benchPlayers.length})`}</span>
+              <span style={{ fontSize: '11px', color: 'var(--accent-primary)', fontWeight: 700 }}>
+                ⇄ {locale === 'sl' ? 'Klikni igralca za menjavo v igro' : 'Click player to substitute in'}
               </span>
             </div>
             <div
@@ -1338,8 +1392,6 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
             >
               {benchPlayers.map(({ player, jerseyNumber }) => {
                 const st = playerStats[player.id];
-                const isDragOver = dropTargetBenchId === player.id;
-                const isBeingDragged = draggedPlayer?.id === player.id;
                 const pm = st?.plusMinus ?? 0;
                 const pmColor =
                   pm > 0
@@ -1352,61 +1404,21 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   <button
                     key={player.id}
                     type="button"
-                    draggable={true}
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData('text/plain', player.id);
-                      setDraggedPlayer({ id: player.id, source: 'bench' });
-                    }}
-                    onDragEnd={() => {
-                      setDraggedPlayer(null);
-                      setDropTargetSlot(null);
-                      setDropTargetBenchId(null);
-                    }}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setDropTargetBenchId(player.id);
-                    }}
-                    onDragLeave={() => {
-                      if (dropTargetBenchId === player.id)
-                        setDropTargetBenchId(null);
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      setDropTargetBenchId(null);
-                      if (
-                        draggedPlayer &&
-                        draggedPlayer.source === 'on_court' &&
-                        draggedPlayer.slot
-                      ) {
-                        performSubstitution(
-                          activeTeam.id,
-                          draggedPlayer.id,
-                          player.id,
-                          draggedPlayer.slot
-                        );
-                      }
-                      setDraggedPlayer(null);
-                    }}
                     onClick={() => {
-                      setSelectedPlayerId(player.id);
-                      setPfStep('choose_action');
+                      setSubstitutingBenchPlayer({ player, jerseyNumber });
                     }}
                     style={{
                       padding: '12px 14px',
                       borderRadius: 'var(--radius-md)',
-                      background: isDragOver
-                        ? 'var(--sem-goal-bg)'
-                        : 'var(--bg-surface)',
-                      border: isDragOver
-                        ? '2px dashed var(--sem-goal)'
-                        : '1px solid var(--border-subtle)',
+                      background: 'var(--bg-surface)',
+                      border: '1px solid var(--border-subtle)',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '12px',
                       textAlign: 'left',
                       position: 'relative',
-                      opacity: isBeingDragged ? 0.45 : 1,
-                      cursor: 'grab',
+                      cursor: 'pointer',
+                      transition: 'border-color 160ms, transform 140ms',
                     }}
                   >
                     <PlayerVisualPortrait
@@ -1418,55 +1430,46 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div
                         style={{
-                          fontSize: '14.5px',
-                          fontWeight: 800,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          color: 'var(--text-primary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '6px',
                         }}
                       >
-                        {player.lastName}
+                        <span style={{ fontSize: '15px', fontWeight: 800 }}>
+                          #{jerseyNumber} {player.lastName}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: '10.5px',
+                            fontWeight: 800,
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            background: 'rgba(56, 189, 248, 0.16)',
+                            color: 'var(--accent-primary)',
+                            border: '1px solid var(--accent-primary)',
+                          }}
+                        >
+                          ⇄ {locale === 'sl' ? 'Menjaj' : 'Sub In'}
+                        </span>
                       </div>
                       <div
                         style={{
                           fontSize: '11.5px',
                           color: 'var(--text-secondary)',
-                          marginBottom: '4px',
                         }}
                       >
-                        {player.primaryPosition} · #{jerseyNumber}
+                        {player.primaryPosition} · {player.firstName}
                       </div>
-
-                      {/* Stat summary with G, A, TF, and +/- */}
                       <div
-                        className="tabular-nums"
-                        style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}
+                        style={{
+                          fontSize: '11px',
+                          color: pmColor,
+                          marginTop: '2px',
+                          fontWeight: 700,
+                        }}
                       >
-                        <span
-                          style={{
-                            fontSize: '10.5px',
-                            fontWeight: 700,
-                            padding: '1px 4px',
-                            borderRadius: '3px',
-                            background: 'var(--sem-goal-bg)',
-                            color: 'var(--sem-goal)',
-                          }}
-                        >
-                          {st?.goals ?? 0}/{st?.shots ?? 0} G
-                        </span>
-                        <span
-                          style={{
-                            fontSize: '10.5px',
-                            fontWeight: 700,
-                            padding: '1px 4px',
-                            borderRadius: '3px',
-                            background: 'var(--bg-elevated)',
-                            color: pmColor,
-                          }}
-                        >
-                          {pm > 0 ? `+${pm}` : pm} +/-
-                        </span>
+                        {pm > 0 ? `+${pm}` : pm} +/-
                       </div>
                     </div>
                   </button>
@@ -1478,21 +1481,21 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
       );
     }
 
-    // STEP 1: PLAYER CLICKED -> SHOWS GOAL MENU & BUTTONS FOR TURNOVER / ASSIST / DEFENCE
+    // STEP 1: CHOOSE ACTION FOR SELECTED PLAYER
     if (pfStep === 'choose_action' && selectedPlayer) {
       return (
         <div
           style={{
             background: 'var(--bg-surface)',
-            border: `2px solid ${activeTeam.primaryColorHex}`,
+            border: '2px solid var(--border-strong)',
             borderRadius: 'var(--radius-lg)',
             padding: isPhoneLayout ? '14px' : '20px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '16px',
+            gap: '18px',
           }}
         >
-          {/* Selected Player Header Banner */}
+          {/* Header Card */}
           <div
             style={{
               display: 'flex',
@@ -1533,13 +1536,14 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                 border: '1px solid var(--border-strong)',
                 fontWeight: 700,
                 fontSize: '12.5px',
+                cursor: 'pointer',
               }}
             >
-              ← Players
+              ← {locale === 'sl' ? 'Igralci' : 'Players'}
             </button>
           </div>
 
-          {/* SHOT OUTCOME MENU (Selecting Goal or Shot advances to Step 2: Pick Court Origin!) */}
+          {/* SHOT OUTCOME MENU */}
           <div>
             <div
               style={{
@@ -1550,7 +1554,9 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                 letterSpacing: '0.03em',
               }}
             >
-              SHOTS & GOALS (OPENS COURT ORIGIN → GOAL FRAME)
+              {locale === 'sl'
+                ? 'STRELI IN ZADETKI (ODPRE MESTO META → OKVIR GOLA)'
+                : 'SHOTS & GOALS (OPENS COURT ORIGIN → GOAL FRAME)'}
             </div>
             <div
               style={{
@@ -1565,40 +1571,40 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                 [
                   {
                     key: 'goal' as const,
-                    label: 'GOAL SCORED',
-                    sub: 'Pick origin → goal frame',
+                    label: locale === 'sl' ? 'ZADETEK / GOL' : 'GOAL SCORED',
+                    sub: locale === 'sl' ? 'Mesto meta → cilj v golu' : 'Pick origin → goal frame',
                     color: 'var(--sem-goal)',
                     bg: 'var(--sem-goal-bg)',
                     icon: <IconGoalNet size={26} color="var(--sem-goal)" />,
                   },
                   {
                     key: 'saved' as const,
-                    label: 'GK SAVED',
-                    sub: 'Shot stopped on target',
+                    label: locale === 'sl' ? 'OBRAMBA VRATARJA' : 'GK SAVED',
+                    sub: locale === 'sl' ? 'Zaustavljen strel' : 'Shot stopped on target',
                     color: 'var(--sem-save)',
                     bg: 'var(--sem-save-bg)',
                     icon: <IconGkSave size={26} color="var(--sem-save)" />,
                   },
                   {
                     key: 'miss' as const,
-                    label: 'MISSED SHOT',
-                    sub: 'Wide or over crossbar',
+                    label: locale === 'sl' ? 'ZGREŠEN STREL' : 'MISSED SHOT',
+                    sub: locale === 'sl' ? 'Mimo ali čez gol' : 'Wide or over crossbar',
                     color: 'var(--sem-miss)',
                     bg: 'var(--sem-miss-bg)',
                     icon: <IconMissTarget size={26} color="var(--sem-miss)" />,
                   },
                   {
                     key: 'post' as const,
-                    label: 'POST / BAR',
-                    sub: 'Hit goalpost or crossbar',
+                    label: locale === 'sl' ? 'VRATNICA / PREČKA' : 'POST / BAR',
+                    sub: locale === 'sl' ? 'Zadet okvir gola' : 'Hit goalpost or crossbar',
                     color: 'var(--sem-miss)',
                     bg: 'var(--sem-miss-bg)',
                     icon: <IconPostHit size={26} color="var(--sem-miss)" />,
                   },
                   {
                     key: 'blocked' as const,
-                    label: 'BLOCKED',
-                    sub: 'Stopped by defender',
+                    label: locale === 'sl' ? 'BLOKIRAN STREL' : 'BLOCKED',
+                    sub: locale === 'sl' ? 'Blokiran s strani obrambe' : 'Stopped by defender',
                     color: 'var(--sem-block)',
                     bg: 'var(--sem-block-bg)',
                     icon: <IconBlockWall size={26} color="var(--sem-block)" />,
@@ -1622,6 +1628,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                     alignItems: 'center',
                     gap: '10px',
                     textAlign: 'left',
+                    cursor: 'pointer',
                     gridColumn:
                       isPhoneLayout && item.key === 'goal' ? 'span 2' : undefined,
                   }}
@@ -1640,7 +1647,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
             </div>
           </div>
 
-          {/* QUICK 1-TAP ASSIST, TURNOVER, DEFENCE & DISCIPLINE BUTTONS */}
+          {/* QUICK NON-SHOT EVENTS */}
           <div>
             <div
               style={{
@@ -1651,7 +1658,9 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                 letterSpacing: '0.03em',
               }}
             >
-              INSTANT 1-TAP EVENTS (ASSISTS, TURNOVERS, DEFENCE, 2 MIN)
+              {locale === 'sl'
+                ? 'HITRI VNOSI: NAPAKE, OBRAMBA IN DISKVALIFIKACIJE'
+                : 'QUICK ACTIONS: TURNOVERS, DEFENCE & DISCIPLINE'}
             </div>
             <div
               style={{
@@ -1662,28 +1671,6 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                 gap: '8px',
               }}
             >
-              <button
-                type="button"
-                onClick={() =>
-                  handleQuickNonShotEvent('attack_other', 'assist', 'Assist')
-                }
-                style={{
-                  minHeight: '54px',
-                  padding: '10px',
-                  borderRadius: 'var(--radius-md)',
-                  background: 'var(--sem-assist-bg)',
-                  border: '1.5px solid var(--sem-assist)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  fontWeight: 800,
-                  fontSize: '13px',
-                }}
-              >
-                <IconAssistPass size={22} />
-                <span>+ Assist Pass</span>
-              </button>
-
               <button
                 type="button"
                 onClick={() =>
@@ -1704,10 +1691,11 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   gap: '8px',
                   fontWeight: 800,
                   fontSize: '13px',
+                  cursor: 'pointer',
                 }}
               >
                 <IconTurnoverFault size={22} />
-                <span>TF: Bad Pass</span>
+                <span>{locale === 'sl' ? 'TN: Slaba podaja' : 'TF: Bad Pass'}</span>
               </button>
 
               <button
@@ -1730,10 +1718,11 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   gap: '8px',
                   fontWeight: 800,
                   fontSize: '13px',
+                  cursor: 'pointer',
                 }}
               >
                 <IconTurnoverFault size={22} />
-                <span>TF: Steps / Line</span>
+                <span>{locale === 'sl' ? 'TN: Koraki / Črta' : 'TF: Steps / Line'}</span>
               </button>
 
               <button
@@ -1756,10 +1745,11 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   gap: '8px',
                   fontWeight: 800,
                   fontSize: '13px',
+                  cursor: 'pointer',
                 }}
               >
                 <IconTurnoverFault size={22} />
-                <span>TF: Off. Foul</span>
+                <span>{locale === 'sl' ? 'TN: Prekršek v napadu' : 'TF: Off. Foul'}</span>
               </button>
 
               <button
@@ -1778,10 +1768,11 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   gap: '8px',
                   fontWeight: 800,
                   fontSize: '13px',
+                  cursor: 'pointer',
                 }}
               >
                 <IconStealBall size={22} />
-                <span>Steal / Interc.</span>
+                <span>{locale === 'sl' ? 'Odvzeta žoga' : 'Steal / Interc.'}</span>
               </button>
 
               <button
@@ -1800,10 +1791,11 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   gap: '8px',
                   fontWeight: 800,
                   fontSize: '13px',
+                  cursor: 'pointer',
                 }}
               >
                 <IconBlockWall size={22} />
-                <span>Defensive Block</span>
+                <span>{locale === 'sl' ? 'Blok v obrambi' : 'Defensive Block'}</span>
               </button>
 
               <button
@@ -1822,10 +1814,11 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   gap: '8px',
                   fontWeight: 800,
                   fontSize: '13px',
+                  cursor: 'pointer',
                 }}
               >
                 <IconTwoMinSuspension size={22} />
-                <span>2′ Suspension</span>
+                <span>{locale === 'sl' ? '2 minuti izključitve' : "2 Min Suspension"}</span>
               </button>
 
               <button
@@ -1834,24 +1827,25 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   handleQuickNonShotEvent(
                     'attack_other',
                     'earned_7m',
-                    'Earned 7m'
+                    locale === 'sl' ? 'Izborjena 7m' : 'Earned 7m Pen'
                   )
                 }
                 style={{
                   minHeight: '54px',
                   padding: '10px',
                   borderRadius: 'var(--radius-md)',
-                  background: 'var(--bg-elevated)',
-                  border: '1.5px solid var(--border-strong)',
+                  background: 'var(--accent-primary-subtle)',
+                  border: '1.5px solid var(--accent-primary)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
                   fontWeight: 800,
                   fontSize: '13px',
+                  cursor: 'pointer',
                 }}
               >
                 <MiniCourtZoneDiagram highlight="7m" size={26} />
-                <span>Earned 7m Pen</span>
+                <span>{locale === 'sl' ? 'Izborjena 7m' : 'Earned 7m Pen'}</span>
               </button>
             </div>
           </div>
@@ -1879,6 +1873,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
               alignItems: 'center',
               justifyContent: 'space-between',
               gap: '8px',
+              flexWrap: 'wrap',
             }}
           >
             <div>
@@ -1889,41 +1884,126 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   color: 'var(--accent-primary)',
                 }}
               >
-                STEP 2 OF 3 · #{selectedJersey} {selectedPlayer.lastName} ({pendingOutcome.toUpperCase()})
+                {locale === 'sl'
+                  ? `2. KORAK · #${selectedJersey} ${selectedPlayer.lastName} (${pendingOutcome.toUpperCase()})`
+                  : `STEP 2 OF 3 · #${selectedJersey} ${selectedPlayer.lastName} (${pendingOutcome.toUpperCase()})`}
               </div>
               <div style={{ fontSize: '16px', fontWeight: 800 }}>
-                Tap where the shot was taken from
+                {locale === 'sl'
+                  ? 'Izberite mesto meta na igrišču'
+                  : 'Tap where the shot was taken from'}
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setPfStep('choose_action')}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button
+                type="button"
+                onClick={() => setActiveZoomMap('court')}
+                style={{
+                  minHeight: '38px',
+                  padding: '0 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'var(--bg-elevated)',
+                  border: '1px solid var(--accent-primary)',
+                  fontWeight: 700,
+                  fontSize: '12px',
+                  color: 'var(--accent-primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  cursor: 'pointer',
+                }}
+              >
+                ⛶ {locale === 'sl' ? 'Povečaj igrišče' : 'Enlarge'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (originAutoTimerRef.current) window.clearTimeout(originAutoTimerRef.current);
+                  setOriginCountdown(null);
+                  setPfStep('choose_action');
+                }}
+                style={{
+                  minHeight: '38px',
+                  padding: '0 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'var(--bg-elevated)',
+                  border: '1px solid var(--border-strong)',
+                  fontWeight: 700,
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                }}
+              >
+                ← {locale === 'sl' ? 'Nazaj' : 'Back'}
+              </button>
+            </div>
+          </div>
+
+          {/* Confirmation Banner with 2s Auto-Continue */}
+          {shotOrigin && (
+            <div
               style={{
-                minHeight: '38px',
-                padding: '0 12px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--bg-elevated)',
-                border: '1px solid var(--border-strong)',
-                fontWeight: 700,
-                fontSize: '12px',
+                padding: '12px 14px',
+                borderRadius: 'var(--radius-md)',
+                background: 'rgba(56, 189, 248, 0.14)',
+                border: '2px solid var(--accent-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px',
+                flexWrap: 'wrap',
               }}
             >
-              ← Back
-            </button>
-          </div>
+              <div>
+                <div style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  📍 {locale === 'sl' ? 'Izbrano mesto:' : 'Selected Origin:'} {t.zones[shotOrigin.zone]}
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                  {locale === 'sl'
+                    ? `Samodejni prehod čez ${originCountdown ?? 2}s · ali kliknite gumb za takojšnjo potrditev.`
+                    : `Auto-continuing in ${originCountdown ?? 2}s · or click button to proceed now.`}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleConfirmCourtOrigin}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'var(--accent-primary)',
+                  color: '#080c14',
+                  fontWeight: 800,
+                  fontSize: '12.5px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                  boxShadow: '0 0 10px rgba(56, 189, 248, 0.45)',
+                }}
+              >
+                <span>✓ {locale === 'sl' ? 'Potrdi pozicijo' : 'Confirm Court Origin'}</span>
+                <span
+                  className="tabular-nums"
+                  style={{
+                    fontSize: '11px',
+                    padding: '2px 5px',
+                    borderRadius: '4px',
+                    background: 'rgba(0,0,0,0.22)',
+                  }}
+                >
+                  {originCountdown ? `(${originCountdown}s)` : '→'}
+                </span>
+              </button>
+            </div>
+          )}
 
           <HandballCourt
             mode="entry"
             locale={locale}
             selectedOrigin={shotOrigin}
-            onSelectOrigin={(coords) => {
-              setShotOrigin(coords);
-              if (coords.zone === 'FAST_BREAK') {
-                setAttackPhase('fast_break');
-              }
-              setPfStep('pick_goal_target');
-            }}
+            onSelectOrigin={handleCourtOriginSelect}
             teamColor={activeTeam.primaryColorHex}
             compact={isPhoneLayout}
           />
@@ -1951,6 +2031,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
               alignItems: 'center',
               justifyContent: 'space-between',
               gap: '8px',
+              flexWrap: 'wrap',
             }}
           >
             <div>
@@ -1961,41 +2042,130 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   color: 'var(--sem-goal)',
                 }}
               >
-                STEP 3 OF 3 · FROM {shotOrigin ? t.zones[shotOrigin.zone] : 'COURT'}
+                {locale === 'sl'
+                  ? `3. KORAK · IZ ${shotOrigin ? t.zones[shotOrigin.zone] : 'IGRIŠČA'}`
+                  : `STEP 3 OF 3 · FROM ${shotOrigin ? t.zones[shotOrigin.zone] : 'COURT'}`}
               </div>
               <div style={{ fontSize: '16px', fontWeight: 800 }}>
-                Tap the Goal Frame where #{selectedJersey} {selectedPlayer.lastName} shot it
+                {locale === 'sl'
+                  ? `Izberite del gola, kamor je streljal #${selectedJersey} ${selectedPlayer.lastName}`
+                  : `Tap the Goal Frame where #${selectedJersey} ${selectedPlayer.lastName} shot it`}
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setPfStep('pick_court_origin')}
-              style={{
-                minHeight: '38px',
-                padding: '0 12px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--bg-elevated)',
-                border: '1px solid var(--border-strong)',
-                fontWeight: 700,
-                fontSize: '12px',
-              }}
-            >
-              ← Court
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button
+                type="button"
+                onClick={() => setActiveZoomMap('goal')}
+                style={{
+                  minHeight: '38px',
+                  padding: '0 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'var(--bg-elevated)',
+                  border: '1px solid var(--sem-goal)',
+                  fontWeight: 700,
+                  fontSize: '12px',
+                  color: 'var(--sem-goal)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  cursor: 'pointer',
+                }}
+              >
+                ⛶ {locale === 'sl' ? 'Povečaj gol' : 'Enlarge'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (targetAutoTimerRef.current) window.clearTimeout(targetAutoTimerRef.current);
+                  setTargetCountdown(null);
+                  setPfStep('pick_court_origin');
+                }}
+                style={{
+                  minHeight: '38px',
+                  padding: '0 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'var(--bg-elevated)',
+                  border: '1px solid var(--border-strong)',
+                  fontWeight: 700,
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                }}
+              >
+                ← {locale === 'sl' ? 'Igrišče' : 'Court'}
+              </button>
+            </div>
           </div>
 
           {/* Bounce Shot Toggle & Assisted By Picker */}
           {renderBounceAndAssistControls()}
 
+          {/* Confirmation Banner with 2s Auto-Continue */}
+          {goalTarget && (
+            <div
+              style={{
+                padding: '12px 14px',
+                borderRadius: 'var(--radius-md)',
+                background: 'rgba(0, 229, 163, 0.14)',
+                border: '2px solid var(--sem-goal)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px',
+                flexWrap: 'wrap',
+              }}
+            >
+              <div>
+                <div style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  🎯 {locale === 'sl' ? 'Izbran del gola:' : 'Selected Target:'} {t.goalCells[goalTarget.cell]}
+                  {isBounceShot ? (locale === 'sl' ? ' · Met od tal' : ' · Bounce Shot') : ''}
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                  {locale === 'sl'
+                    ? `Samodejno shranjevanje čez ${targetCountdown ?? 2}s · ali kliknite za takojšnjo potrditev.`
+                    : `Auto-saving shot in ${targetCountdown ?? 2}s · or click button to confirm & save now.`}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleConfirmGoalTarget}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'var(--sem-goal)',
+                  color: '#080c14',
+                  fontWeight: 800,
+                  fontSize: '12.5px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                  boxShadow: '0 0 10px rgba(0, 229, 163, 0.45)',
+                }}
+              >
+                <span>✓ {locale === 'sl' ? 'Potrdi in shrani strel' : 'Confirm & Save Shot'}</span>
+                <span
+                  className="tabular-nums"
+                  style={{
+                    fontSize: '11px',
+                    padding: '2px 5px',
+                    borderRadius: '4px',
+                    background: 'rgba(0,0,0,0.22)',
+                  }}
+                >
+                  {targetCountdown ? `(${targetCountdown}s)` : '✓'}
+                </span>
+              </button>
+            </div>
+          )}
+
           <HandballGoal
             mode="entry"
             locale={locale}
             selectedTarget={goalTarget}
-            onSelectTarget={(coords) => {
-              setGoalTarget(coords);
-              commitShotWithDetails(pendingOutcome, shotOrigin ?? undefined, coords);
-            }}
+            onSelectTarget={handleGoalTargetSelect}
             teamColor={activeTeam.primaryColorHex}
           />
         </div>
@@ -2005,570 +2175,6 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
     return null;
   };
 
-  // =====================================================
-  // MODE 2: ALL-IN-ONE COURT + PLAYERS + CHARTS VIEW
-  // =====================================================
-  const renderAllInOneMode = () => {
-    const selectedPlayer = players.find((p) => p.id === selectedPlayerId);
-    const selectedPlayerLineup = activeMatch.lineups.find(
-      (l) => l.playerId === selectedPlayerId
-    );
-    const selectedJersey =
-      selectedPlayerLineup?.jerseyNumber ??
-      selectedPlayer?.defaultJerseyNumber ??
-      0;
-
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {/* On-Court Players Visual Strip (Clean, Zero Overflow) */}
-        <div
-          style={{
-            background: 'var(--bg-surface)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-md)',
-            padding: '10px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '6px',
-            }}
-          >
-            <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-secondary)' }}>
-              ACTIVE SHOOTER / PLAYER:{' '}
-              <strong style={{ color: activeTeam.primaryColorHex }}>
-                #{selectedJersey} {selectedPlayer?.lastName}
-              </strong>
-            </span>
-            <button
-              type="button"
-              onClick={() =>
-                setOpenActionSheet((s) => (s === 'sub_panel' ? null : 'sub_panel'))
-              }
-              style={{
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--bg-elevated)',
-                border: '1px solid var(--border-strong)',
-                fontSize: '11px',
-                fontWeight: 700,
-              }}
-            >
-              ⇄ Substitutions & Bench ({benchPlayers.length})
-            </button>
-          </div>
-
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: isPhoneLayout
-                ? 'repeat(4, 1fr)'
-                : 'repeat(7, 1fr)',
-              gap: '6px',
-            }}
-          >
-            {onCourtPlayersWithSlot.map(({ slot, player, jerseyNumber }) => {
-              const st = playerStats[player.id];
-              const isSel = selectedPlayerId === player.id;
-              return (
-                <button
-                  key={player.id}
-                  type="button"
-                  onClick={() => setSelectedPlayerId(player.id)}
-                  style={{
-                    padding: '6px',
-                    borderRadius: 'var(--radius-sm)',
-                    background: isSel
-                      ? `${activeTeam.primaryColorHex}2E`
-                      : 'var(--bg-elevated)',
-                    border: isSel
-                      ? `2px solid ${activeTeam.primaryColorHex}`
-                      : autoSuggestedSlot === slot
-                      ? `1.5px dashed ${activeTeam.primaryColorHex}`
-                      : '1px solid var(--border-subtle)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '3px',
-                  }}
-                >
-                  <PlayerVisualPortrait
-                    player={player}
-                    jerseyNumber={jerseyNumber}
-                    team={activeTeam}
-                    slot={slot}
-                    size={40}
-                  />
-                  <span
-                    style={{
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      maxWidth: '100%',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {player.lastName}
-                  </span>
-                  <span
-                    className="tabular-nums"
-                    style={{ fontSize: '10px', color: 'var(--sem-goal)', fontWeight: 700 }}
-                  >
-                    {st?.goals ?? 0}/{st?.shots ?? 0}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Expandable Bench & Line Change Panel */}
-          {openActionSheet === 'sub_panel' && (
-            <div
-              style={{
-                borderTop: '1px solid var(--border-subtle)',
-                paddingTop: '10px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px',
-              }}
-            >
-              <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
-                Tap an on-court player first, then tap a bench player below to
-                substitute:
-              </div>
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: isPhoneLayout
-                    ? 'repeat(2, 1fr)'
-                    : 'repeat(4, 1fr)',
-                  gap: '6px',
-                }}
-              >
-                {benchPlayers.map(({ player, jerseyNumber }) => (
-                  <button
-                    key={player.id}
-                    type="button"
-                    onClick={() => {
-                      if (selectedPlayerId) {
-                        const slotObj = onCourtPlayersWithSlot.find(
-                          (x) => x.player.id === selectedPlayerId
-                        );
-                        if (slotObj) {
-                          performSubstitution(
-                            activeTeam.id,
-                            selectedPlayerId,
-                            player.id,
-                            slotObj.slot
-                          );
-                          setSelectedPlayerId(player.id);
-                          setOpenActionSheet(null);
-                          return;
-                        }
-                      }
-                      setSelectedPlayerId(player.id);
-                    }}
-                    style={{
-                      padding: '8px',
-                      borderRadius: 'var(--radius-sm)',
-                      background: 'var(--bg-elevated)',
-                      border: '1px solid var(--border-strong)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                    }}
-                  >
-                    <PlayerVisualPortrait
-                      player={player}
-                      jerseyNumber={jerseyNumber}
-                      team={activeTeam}
-                      size={36}
-                    />
-                    <div style={{ textAlign: 'left' }}>
-                      <div style={{ fontSize: '12px', fontWeight: 700 }}>
-                        #{jerseyNumber} {player.lastName}
-                      </div>
-                      <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
-                        Sub IN ({player.primaryPosition})
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Court Origin (Left/Top) + Goal Frame (Right/Bottom) */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: isPhoneLayout ? '1fr' : '1.12fr 0.88fr',
-            gap: '10px',
-            alignItems: 'start',
-          }}
-        >
-          <div
-            style={{
-              background: 'var(--bg-surface)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-md)',
-              padding: '10px',
-            }}
-          >
-            <div
-              style={{
-                fontSize: '11.5px',
-                fontWeight: 800,
-                color: shotOrigin ? 'var(--sem-goal)' : 'var(--accent-primary)',
-                marginBottom: '6px',
-              }}
-            >
-              {shotOrigin
-                ? `✓ 1. Origin: ${t.zones[shotOrigin.zone]}`
-                : '1. Tap Court Shot Origin'}
-            </div>
-            <HandballCourt
-              mode="entry"
-              locale={locale}
-              selectedOrigin={shotOrigin}
-              onSelectOrigin={(coords, suggestedPos) => {
-                setShotOrigin(coords);
-                setAutoSuggestedSlot(suggestedPos);
-                if (coords.zone === 'FAST_BREAK') setAttackPhase('fast_break');
-                const onCourtByPos = activeTeamCourt?.onCourtByPosition;
-                if (onCourtByPos && onCourtByPos[suggestedPos]) {
-                  setSelectedPlayerId(onCourtByPos[suggestedPos]);
-                }
-              }}
-              teamColor={activeTeam.primaryColorHex}
-              compact={isPhoneLayout}
-            />
-          </div>
-
-          <div
-            style={{
-              background: 'var(--bg-surface)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-md)',
-              padding: '10px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '8px',
-            }}
-          >
-            <div
-              style={{
-                fontSize: '11.5px',
-                fontWeight: 800,
-                color: goalTarget ? 'var(--sem-goal)' : 'var(--accent-primary)',
-              }}
-            >
-              {goalTarget
-                ? `✓ 2. Target: ${t.goalCells[goalTarget.cell]}`
-                : '2. Tap 3×2m Goal Target'}
-            </div>
-            <HandballGoal
-              mode="entry"
-              locale={locale}
-              selectedTarget={goalTarget}
-              onSelectTarget={(coords) => setGoalTarget(coords)}
-              teamColor={activeTeam.primaryColorHex}
-            />
-          </div>
-        </div>
-
-        {/* Bounce Shot & Assist Controls */}
-        {renderBounceAndAssistControls()}
-
-        {/* Step 3: Diagrammed Shot Outcome Buttons */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: isPhoneLayout
-              ? 'repeat(3, 1fr)'
-              : 'repeat(5, 1fr)',
-            gap: '6px',
-          }}
-        >
-          {(
-            [
-              {
-                key: 'goal' as const,
-                label: t.live.goal,
-                color: 'var(--sem-goal)',
-                bg: 'var(--sem-goal-bg)',
-                icon: <IconGoalNet size={20} color="var(--sem-goal)" />,
-              },
-              {
-                key: 'saved' as const,
-                label: t.live.saved,
-                color: 'var(--sem-save)',
-                bg: 'var(--sem-save-bg)',
-                icon: <IconGkSave size={20} color="var(--sem-save)" />,
-              },
-              {
-                key: 'miss' as const,
-                label: t.live.miss,
-                color: 'var(--sem-miss)',
-                bg: 'var(--sem-miss-bg)',
-                icon: <IconMissTarget size={20} color="var(--sem-miss)" />,
-              },
-              {
-                key: 'post' as const,
-                label: t.live.post,
-                color: 'var(--sem-miss)',
-                bg: 'var(--sem-miss-bg)',
-                icon: <IconPostHit size={20} color="var(--sem-miss)" />,
-              },
-              {
-                key: 'blocked' as const,
-                label: t.live.block,
-                color: 'var(--sem-block)',
-                bg: 'var(--sem-block-bg)',
-                icon: <IconBlockWall size={20} color="var(--sem-block)" />,
-              },
-            ]
-          ).map((btn) => (
-            <button
-              key={btn.key}
-              type="button"
-              onClick={() => commitShotWithDetails(btn.key)}
-              style={{
-                minHeight: '54px',
-                padding: '6px 8px',
-                borderRadius: 'var(--radius-md)',
-                background: btn.bg,
-                border: `2px solid ${btn.color}`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                fontWeight: 800,
-                fontSize: '13.5px',
-                gridColumn:
-                  isPhoneLayout && btn.key === 'goal' ? 'span 3' : undefined,
-              }}
-            >
-              {btn.icon}
-              <span>{btn.label}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Diagrammed Non-Shot Action Buttons */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: isPhoneLayout
-              ? 'repeat(3, 1fr)'
-              : 'repeat(6, 1fr)',
-            gap: '6px',
-          }}
-        >
-          <button
-            type="button"
-            onClick={() =>
-              handleQuickNonShotEvent('attack_other', 'assist', t.live.assist)
-            }
-            style={{
-              minHeight: '48px',
-              padding: '6px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--sem-assist-bg)',
-              border: '1px solid var(--sem-assist)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              fontWeight: 700,
-              fontSize: '12px',
-            }}
-          >
-            <IconAssistPass size={18} />
-            <span>{t.live.assist}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() =>
-              setOpenActionSheet((prev) =>
-                prev === 'tf_types' ? null : 'tf_types'
-              )
-            }
-            style={{
-              minHeight: '48px',
-              padding: '6px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--sem-fault-bg)',
-              border: '1px solid var(--sem-fault)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              fontWeight: 700,
-              fontSize: '12px',
-            }}
-          >
-            <IconTurnoverFault size={18} />
-            <span>{t.live.technicalFault} ▾</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() =>
-              handleQuickNonShotEvent('defence', 'steal', t.live.steal)
-            }
-            style={{
-              minHeight: '48px',
-              padding: '6px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--sem-goal-bg)',
-              border: '1px solid var(--sem-goal)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              fontWeight: 700,
-              fontSize: '12px',
-            }}
-          >
-            <IconStealBall size={18} />
-            <span>{t.live.steal}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() =>
-              handleQuickNonShotEvent('defence', 'block', t.live.block)
-            }
-            style={{
-              minHeight: '48px',
-              padding: '6px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--sem-block-bg)',
-              border: '1px solid var(--sem-block)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              fontWeight: 700,
-              fontSize: '12px',
-            }}
-          >
-            <IconBlockWall size={18} />
-            <span>{t.live.block}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() =>
-              handleQuickNonShotEvent('discipline', '2min', t.live.twoMin)
-            }
-            style={{
-              minHeight: '48px',
-              padding: '6px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--sem-fault-bg)',
-              border: '1px solid var(--sem-fault)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              fontWeight: 700,
-              fontSize: '12px',
-            }}
-          >
-            <IconTwoMinSuspension size={18} />
-            <span>2′ Susp</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() =>
-              handleQuickNonShotEvent('team_state', 'timeout', t.live.timeout)
-            }
-            style={{
-              minHeight: '48px',
-              padding: '6px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--bg-surface)',
-              border: '1px solid var(--border-strong)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
-              fontWeight: 700,
-              fontSize: '12px',
-            }}
-          >
-            <IconTimeoutCard size={18} />
-            <span>{t.live.timeout}</span>
-          </button>
-        </div>
-
-        {openActionSheet === 'tf_types' && (
-          <div
-            style={{
-              padding: '10px',
-              background: 'var(--bg-elevated)',
-              border: '1px solid var(--sem-fault)',
-              borderRadius: 'var(--radius-md)',
-              display: 'grid',
-              gridTemplateColumns: isPhoneLayout
-                ? 'repeat(2, 1fr)'
-                : 'repeat(4, 1fr)',
-              gap: '6px',
-            }}
-          >
-            {(
-              [
-                'bad_pass',
-                'catching_error',
-                'steps',
-                'double_dribble',
-                'offensive_foul',
-                'line_violation',
-                'passive_play',
-              ] as TechnicalFaultType[]
-            ).map((tfKey) => (
-              <button
-                key={tfKey}
-                type="button"
-                onClick={() =>
-                  handleQuickNonShotEvent(
-                    'technical_fault',
-                    tfKey,
-                    t.faults[tfKey]
-                  )
-                }
-                style={{
-                  minHeight: '42px',
-                  padding: '6px 10px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'var(--bg-surface)',
-                  border: '1px solid var(--border-strong)',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  textAlign: 'left',
-                }}
-              >
-                ✕ {t.faults[tfKey]}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
 
   // =====================================================
   // Live Insights & Editable Feed Panel
@@ -2833,34 +2439,246 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
       >
         {renderTeamToggle()}
 
-        {liveEntryMode === 'player_first' ? (
-          /* MODE 1: Player Portraits First -> Action Menu -> Court Origin -> Goal Frame */
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: isPhoneLayout ? '1fr' : '1.35fr 0.65fr',
-              gap: '14px',
-              alignItems: 'start',
-            }}
-          >
-            {renderPlayerFirstMode()}
-            {renderInsightsAndFeedColumn()}
-          </div>
-        ) : (
-          /* MODE 2: All-in-One Court + Goal + Players + Live Insights */
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: isPhoneLayout ? '1fr' : '1.4fr 0.6fr',
-              gap: '14px',
-              alignItems: 'start',
-            }}
-          >
-            {renderAllInOneMode()}
-            {renderInsightsAndFeedColumn()}
-          </div>
-        )}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: isPhoneLayout ? '1fr' : '1.35fr 0.65fr',
+            gap: '14px',
+            alignItems: 'start',
+          }}
+        >
+          {renderPlayerFirstMode()}
+          {renderInsightsAndFeedColumn()}
+        </div>
       </div>
+
+      {/* Fullscreen Zoomable Map Modal */}
+      {activeZoomMap === 'court' && (
+        <ZoomableMapModal
+          isOpen={true}
+          onClose={() => setActiveZoomMap(null)}
+          title={locale === 'sl' ? 'Rokometno igrišče (Cel zaslon)' : 'Handball Court (Full Screen)'}
+          subtitle={locale === 'sl' ? 'Povečava in premik · Tapnite cono za izbiro meta' : 'Zoom & pan · Tap zone to select shot origin'}
+        >
+          <div style={{ width: '100%', maxWidth: '640px' }}>
+            <HandballCourt
+              mode="entry"
+              locale={locale}
+              selectedOrigin={shotOrigin}
+              onSelectOrigin={(coords) => {
+                handleCourtOriginSelect(coords);
+                setActiveZoomMap(null);
+              }}
+              teamColor={activeTeam.primaryColorHex}
+            />
+          </div>
+        </ZoomableMapModal>
+      )}
+
+      {activeZoomMap === 'goal' && (
+        <ZoomableMapModal
+          isOpen={true}
+          onClose={() => setActiveZoomMap(null)}
+          title={locale === 'sl' ? 'Okvir gola 3×2m (Cel zaslon)' : '3×2m Goal Frame (Full Screen)'}
+          subtitle={locale === 'sl' ? 'Povečava in premik · Tapnite cilj v golu' : 'Zoom & pan · Tap target inside frame'}
+        >
+          <div style={{ width: '100%', maxWidth: '640px' }}>
+            <HandballGoal
+              mode="entry"
+              locale={locale}
+              selectedTarget={goalTarget}
+              onSelectTarget={(coords) => {
+                handleGoalTargetSelect(coords);
+                setActiveZoomMap(null);
+              }}
+              teamColor={activeTeam.primaryColorHex}
+            />
+          </div>
+        </ZoomableMapModal>
+      )}
+
+      {/* Click-based Substitution Modal */}
+      {substitutingBenchPlayer && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9990,
+            background: 'rgba(5, 7, 12, 0.88)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
+        >
+          <div
+            style={{
+              background: 'var(--bg-surface)',
+              border: '2px solid var(--accent-primary)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '20px',
+              width: '100%',
+              maxWidth: '560px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              boxShadow: '0 16px 40px rgba(0, 0, 0, 0.7)',
+            }}
+          >
+            {/* Header */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                borderBottom: '1px solid var(--border-subtle)',
+                paddingBottom: '12px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <PlayerVisualPortrait
+                  player={substitutingBenchPlayer.player}
+                  jerseyNumber={substitutingBenchPlayer.jerseyNumber}
+                  team={activeTeam}
+                  size={46}
+                />
+                <div>
+                  <div style={{ fontSize: '16px', fontWeight: 800 }}>
+                    {locale === 'sl' ? 'Menjava v igro:' : 'Substitute into court:'}{' '}
+                    #{substitutingBenchPlayer.jerseyNumber} {substitutingBenchPlayer.player.firstName}{' '}
+                    {substitutingBenchPlayer.player.lastName}
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--accent-primary)', fontWeight: 600 }}>
+                    {locale === 'sl'
+                      ? 'Kliknite igralca na igrišču, ki ga bo zamenjal:'
+                      : 'Click which on-court player he replaces:'}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSubstitutingBenchPlayer(null)}
+                style={{
+                  minWidth: '32px',
+                  minHeight: '32px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'var(--bg-elevated)',
+                  border: '1px solid var(--border-strong)',
+                  fontSize: '13px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* List of 7 On-Court Players */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {onCourtPlayersWithSlot.map(({ slot, player, jerseyNumber }) => {
+                const st = playerStats[player.id];
+                const pm = st?.plusMinus ?? 0;
+                return (
+                  <button
+                    key={player.id}
+                    type="button"
+                    onClick={() => {
+                      performSubstitution(
+                        activeTeam.id,
+                        player.id,
+                        substitutingBenchPlayer.player.id,
+                        slot
+                      );
+                      setSubstitutingBenchPlayer(null);
+                    }}
+                    style={{
+                      padding: '10px 14px',
+                      borderRadius: 'var(--radius-md)',
+                      background: 'var(--bg-elevated)',
+                      border: '1.5px solid var(--border-strong)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '12px',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      transition: 'border-color 140ms',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 800,
+                          padding: '3px 7px',
+                          borderRadius: '4px',
+                          background: 'rgba(56, 189, 248, 0.18)',
+                          color: 'var(--accent-primary)',
+                        }}
+                      >
+                        {slot}
+                      </span>
+                      <PlayerVisualPortrait
+                        player={player}
+                        jerseyNumber={jerseyNumber}
+                        team={activeTeam}
+                        size={38}
+                      />
+                      <div>
+                        <div style={{ fontSize: '14px', fontWeight: 800 }}>
+                          #{jerseyNumber} {player.firstName} {player.lastName}
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                          {player.primaryPosition} · {pm > 0 ? `+${pm}` : pm} +/-
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: 'var(--radius-sm)',
+                        background: 'var(--sem-fault-bg)',
+                        border: '1px solid var(--sem-fault)',
+                        color: 'var(--sem-fault)',
+                        fontSize: '12px',
+                        fontWeight: 800,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      <span>⇄</span>
+                      <span>{locale === 'sl' ? 'Zamenjaj' : 'Sub Out'}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setSubstitutingBenchPlayer(null)}
+              style={{
+                padding: '10px',
+                borderRadius: 'var(--radius-sm)',
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--border-strong)',
+                fontSize: '13px',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              {locale === 'sl' ? 'Prekliči' : 'Cancel'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
