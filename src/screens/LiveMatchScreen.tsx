@@ -168,6 +168,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
 
   // Mode 1 (Player-First Step-by-Step State)
   const [pfStep, setPfStep] = useState<PlayerFirstStep>('select_player');
+  const [isFeedExpandedOnMobile, setIsFeedExpandedOnMobile] = useState<boolean>(false);
 
   // Mode 2 Non-Shot Expanders & Subs
   const [openActionSheet, setOpenActionSheet] = useState<
@@ -488,11 +489,12 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
         zIndex: 30,
         background: 'var(--bg-surface)',
         borderBottom: '1px solid var(--border-strong)',
-        padding: isPhoneLayout ? '8px 10px' : '10px 18px',
+        padding: isPhoneLayout ? '6px 8px' : '10px 18px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '6px',
+        gap: '4px',
         width: '100%',
+        boxShadow: '0 2px 10px rgba(0, 0, 0, 0.4)',
       }}
     >
       <div
@@ -500,44 +502,55 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: '6px',
-          flexWrap: 'wrap',
+          gap: isPhoneLayout ? '4px' : '8px',
+          width: '100%',
         }}
       >
-        {/* Compact Scoreboard */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        {/* Compact High-Visibility Scoreboard */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: isPhoneLayout ? '3px' : '6px', flexShrink: 0 }}>
           <div
             className={lastGoalFlashTeamId === ourTeam.id ? 'score-flash-active' : ''}
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: isPhoneLayout ? '4px 8px' : '5px 12px',
+              gap: '4px',
+              padding: isPhoneLayout ? '3px 6px' : '5px 12px',
               borderRadius: 'var(--radius-sm)',
               background: 'var(--bg-elevated)',
-              border: `2px solid ${ourTeam.primaryColorHex}`,
+              border: `1.5px solid ${ourTeam.primaryColorHex}`,
             }}
           >
             <TeamShapeIcon
               shape={ourTeam.shapeMarker}
               color={ourTeam.primaryColorHex}
               logoUri={ourTeam.logoUri}
-              size={isPhoneLayout ? 20 : 24}
+              size={isPhoneLayout ? 15 : 22}
             />
-            <span style={{ fontSize: '12px', fontWeight: 800 }}>{ourTeam.shortCode}</span>
+            <span style={{ fontSize: isPhoneLayout ? '11px' : '12px', fontWeight: 800 }}>
+              {ourTeam.shortCode}
+            </span>
             <span
               className="tabular-nums"
               style={{
-                fontSize: isPhoneLayout ? '20px' : '24px',
-                fontWeight: 800,
+                fontSize: isPhoneLayout ? '17px' : '22px',
+                fontWeight: 900,
                 color: 'var(--text-primary)',
+                minWidth: isPhoneLayout ? '18px' : '22px',
+                textAlign: 'center',
               }}
             >
               {ourSummary.goals}
             </span>
           </div>
 
-          <span className="tabular-nums" style={{ fontWeight: 800, color: 'var(--text-muted)' }}>
+          <span
+            className="tabular-nums"
+            style={{
+              fontWeight: 800,
+              fontSize: isPhoneLayout ? '13px' : '16px',
+              color: 'var(--text-muted)',
+            }}
+          >
             :
           </span>
 
@@ -546,39 +559,43 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: isPhoneLayout ? '4px 8px' : '5px 12px',
+              gap: '4px',
+              padding: isPhoneLayout ? '3px 6px' : '5px 12px',
               borderRadius: 'var(--radius-sm)',
               background: 'var(--bg-elevated)',
-              border: `2px solid ${oppTeam.primaryColorHex}`,
+              border: `1.5px solid ${oppTeam.primaryColorHex}`,
             }}
           >
             <span
               className="tabular-nums"
               style={{
-                fontSize: isPhoneLayout ? '20px' : '24px',
-                fontWeight: 800,
+                fontSize: isPhoneLayout ? '17px' : '22px',
+                fontWeight: 900,
                 color: 'var(--text-primary)',
+                minWidth: isPhoneLayout ? '18px' : '22px',
+                textAlign: 'center',
               }}
             >
               {oppSummary.goals}
             </span>
-            <span style={{ fontSize: '12px', fontWeight: 800 }}>{oppTeam.shortCode}</span>
+            <span style={{ fontSize: isPhoneLayout ? '11px' : '12px', fontWeight: 800 }}>
+              {oppTeam.shortCode}
+            </span>
             <TeamShapeIcon
               shape={oppTeam.shapeMarker}
               color={oppTeam.primaryColorHex}
               logoUri={oppTeam.logoUri}
-              size={isPhoneLayout ? 20 : 24}
+              size={isPhoneLayout ? 15 : 22}
             />
           </div>
         </div>
 
-        {/* Live Running Match Clock with Start/Pause */}
+        {/* Running Match Clock & Action Buttons */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: isPhoneLayout ? '6px' : '10px',
+            gap: isPhoneLayout ? '3px' : '8px',
           }}
         >
           <button
@@ -586,12 +603,12 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
             onClick={() => setClockSec(Math.max(0, clockSec - 10))}
             title="-10 seconds"
             style={{
-              minHeight: '38px',
-              padding: '0 8px',
+              minHeight: isPhoneLayout ? '32px' : '38px',
+              padding: isPhoneLayout ? '0 5px' : '0 8px',
               borderRadius: 'var(--radius-sm)',
               background: 'var(--bg-elevated)',
               border: '1px solid var(--border-strong)',
-              fontSize: '11.5px',
+              fontSize: isPhoneLayout ? '10.5px' : '11.5px',
               fontWeight: 800,
               cursor: 'pointer',
             }}
@@ -603,29 +620,33 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
             type="button"
             onClick={() => setIsClockRunning(!isClockRunning)}
             style={{
-              minHeight: '38px',
-              padding: isPhoneLayout ? '0 10px' : '0 16px',
+              minHeight: isPhoneLayout ? '32px' : '38px',
+              padding: isPhoneLayout ? '0 6px' : '0 14px',
               borderRadius: 'var(--radius-sm)',
               background: isClockRunning ? 'var(--sem-fault)' : 'var(--sem-goal)',
               color: isClockRunning ? '#ffffff' : '#080c14',
               fontWeight: 800,
-              fontSize: '12px',
+              fontSize: isPhoneLayout ? '11px' : '12px',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
+              gap: isPhoneLayout ? '3px' : '6px',
               boxShadow: isClockRunning ? '0 0 10px rgba(225, 29, 72, 0.4)' : 'none',
+              cursor: 'pointer',
             }}
           >
             <span>{isClockRunning ? '⏸' : '▶'}</span>
-            <span className="tabular-nums" style={{ fontSize: '14px', fontWeight: 800 }}>
+            <span
+              className="tabular-nums"
+              style={{ fontSize: isPhoneLayout ? '12.5px' : '14px', fontWeight: 800 }}
+            >
               {formatClock(clockSec)}
             </span>
             <span
               style={{
-                fontSize: '10px',
+                fontSize: '9.5px',
                 fontWeight: 800,
-                padding: '1px 4px',
-                borderRadius: '4px',
+                padding: '1px 3px',
+                borderRadius: '3px',
                 background: 'var(--bg-canvas)',
                 color: 'var(--accent-primary)',
               }}
@@ -639,12 +660,12 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
             onClick={() => setClockSec(clockSec + 10)}
             title="+10 seconds"
             style={{
-              minHeight: '38px',
-              padding: '0 8px',
+              minHeight: isPhoneLayout ? '32px' : '38px',
+              padding: isPhoneLayout ? '0 5px' : '0 8px',
               borderRadius: 'var(--radius-sm)',
               background: 'var(--bg-elevated)',
               border: '1px solid var(--border-strong)',
-              fontSize: '11.5px',
+              fontSize: isPhoneLayout ? '10.5px' : '11.5px',
               fontWeight: 800,
               cursor: 'pointer',
             }}
@@ -656,56 +677,40 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
             type="button"
             disabled={!canUndo}
             onClick={undoLastAction}
+            title={t.common.undo}
             style={{
-              minHeight: '42px',
-              padding: '0 10px',
+              minHeight: isPhoneLayout ? '32px' : '38px',
+              padding: isPhoneLayout ? '0 7px' : '0 10px',
               borderRadius: 'var(--radius-sm)',
               background: 'var(--bg-elevated)',
               border: '1px solid var(--border-strong)',
               opacity: canUndo ? 1 : 0.35,
               fontSize: '12px',
-              fontWeight: 700,
+              fontWeight: 800,
+              cursor: canUndo ? 'pointer' : 'default',
             }}
           >
-            ↶ {isPhoneLayout ? '' : t.common.undo}
+            ↶
           </button>
-          {!isPhoneLayout && (
-            <button
-              type="button"
-              disabled={!canRedo}
-              onClick={redoLastAction}
-              style={{
-                minHeight: '42px',
-                padding: '0 10px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--bg-elevated)',
-                border: '1px solid var(--border-strong)',
-                opacity: canRedo ? 1 : 0.35,
-                fontSize: '12px',
-                fontWeight: 700,
-              }}
-            >
-              ↷ {t.common.redo}
-            </button>
-          )}
 
           <button
             type="button"
             onClick={() => {
-              if (window.confirm('Reset this match to 0-0 and clock to 00:00?')) {
+              if (window.confirm(locale === 'sl' ? 'Ponastavi tekmo na 0-0 in čas na 00:00?' : 'Reset this match to 0-0 and clock to 00:00?')) {
                 resetMatchToZero();
               }
             }}
-            title="Reset match to 0-0"
+            title={locale === 'sl' ? 'Ponastavi na 0-0' : 'Reset match to 0-0'}
             style={{
-              minHeight: '42px',
-              padding: '0 8px',
+              minHeight: isPhoneLayout ? '32px' : '38px',
+              padding: isPhoneLayout ? '0 5px' : '0 8px',
               borderRadius: 'var(--radius-sm)',
               background: 'var(--bg-elevated)',
               border: '1px solid var(--border-strong)',
-              fontSize: '11px',
+              fontSize: '10.5px',
               fontWeight: 800,
               color: 'var(--sem-miss)',
+              cursor: 'pointer',
             }}
           >
             0-0
@@ -713,72 +718,17 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
         </div>
       </div>
 
-      {/* Mode Switcher Bar (Switch between Mode 1: Player-First & Mode 2: All-in-One anytime!) + Active 2' Suspensions */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '6px',
-          flexWrap: 'wrap',
-        }}
-      >
+      {/* Active 2-min suspension badges (renders ONLY when suspensions are active) */}
+      {allActiveSuspensions.length > 0 && (
         <div
           style={{
-            display: 'inline-flex',
-            background: 'var(--bg-canvas)',
-            padding: '2px',
-            borderRadius: 'var(--radius-sm)',
-            border: '1px solid var(--border-strong)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            flexWrap: 'wrap',
+            paddingTop: '2px',
           }}
         >
-          <button
-            type="button"
-            onClick={() => {
-              setLiveEntryMode('player_first');
-              setPfStep('select_player');
-            }}
-            style={{
-              padding: '4px 10px',
-              borderRadius: '4px',
-              background:
-                liveEntryMode === 'player_first'
-                  ? 'var(--sem-goal)'
-                  : 'transparent',
-              color:
-                liveEntryMode === 'player_first'
-                  ? '#080c14'
-                  : 'var(--text-secondary)',
-              fontSize: '11px',
-              fontWeight: 800,
-            }}
-          >
-            1. Players Only Flow
-          </button>
-          <button
-            type="button"
-            onClick={() => setLiveEntryMode('all_in_one')}
-            style={{
-              padding: '4px 10px',
-              borderRadius: '4px',
-              background:
-                liveEntryMode === 'all_in_one'
-                  ? 'var(--accent-primary)'
-                  : 'transparent',
-              color:
-                liveEntryMode === 'all_in_one'
-                  ? '#080c14'
-                  : 'var(--text-secondary)',
-              fontSize: '11px',
-              fontWeight: 800,
-            }}
-          >
-            2. All-in-One Charts
-          </button>
-        </div>
-
-        {/* Active 2-min suspension badges */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
           {allActiveSuspensions.map((susp) => {
             const suspTeam = susp.teamId === ourTeam.id ? ourTeam : oppTeam;
             return (
@@ -793,7 +743,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   borderRadius: '999px',
                   background: 'var(--sem-fault-bg)',
                   border: '1px solid var(--sem-fault)',
-                  fontSize: '11px',
+                  fontSize: '10.5px',
                   fontWeight: 800,
                   color: 'var(--sem-fault)',
                 }}
@@ -803,7 +753,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
             );
           })}
         </div>
-      </div>
+      )}
     </div>
   );
 
@@ -938,7 +888,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
             }}
           >
             <IconDirectShot size={18} />
-            <span>Direct Shot</span>
+            <span>{locale === 'sl' ? 'Direktni strel' : 'Direct Shot'}</span>
           </button>
 
           <button
@@ -964,7 +914,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
             }}
           >
             <IconBounceShot size={18} />
-            <span>{isBounceShot ? '✓ Bounce Shot' : 'Bounce Shot'}</span>
+            <span>{isBounceShot ? (locale === 'sl' ? '✓ Od tal' : '✓ Bounce Shot') : (locale === 'sl' ? 'Strel od tal' : 'Bounce Shot')}</span>
           </button>
 
           <button
@@ -995,7 +945,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
             }}
           >
             <IconStealBall size={16} />
-            <span>{attackPhase === 'fast_break' ? '✓ Fast Break' : 'Fast Break'}</span>
+            <span>{attackPhase === 'fast_break' ? (locale === 'sl' ? '✓ Protinapad' : '✓ Fast Break') : (locale === 'sl' ? 'Protinapad' : 'Fast Break')}</span>
           </button>
 
           <button
@@ -1020,7 +970,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
               fontWeight: 800,
             }}
           >
-            {activeTeamCourt?.is7v6Active ? '● 7v6 Empty Net' : '7v6 Empty Net'}
+            {activeTeamCourt?.is7v6Active ? (locale === 'sl' ? '● 7v6 Prazna vrata' : '● 7v6 Empty Net') : (locale === 'sl' ? '7v6 Prazna vrata' : '7v6 Empty Net')}
           </button>
         </div>
 
@@ -1044,7 +994,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
             }}
           >
             <IconAssistPass size={16} />
-            Assist by:
+            {locale === 'sl' ? 'Podaja:' : 'Assist by:'}
           </span>
 
           <button
@@ -1065,7 +1015,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
               fontWeight: 700,
             }}
           >
-            None
+            {locale === 'sl' ? 'Brez' : 'None'}
           </button>
 
           {teammates.map(({ player: mate, jerseyNumber }) => {
@@ -1185,9 +1135,9 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
               style={{
                 display: 'grid',
                 gridTemplateColumns: isPhoneLayout
-                  ? 'repeat(2, 1fr)'
+                  ? '1fr'
                   : 'repeat(auto-fill, minmax(210px, 1fr))',
-                gap: '12px',
+                gap: isPhoneLayout ? '8px' : '12px',
               }}
             >
               {onCourtPlayersWithSlot.map(({ slot, player, jerseyNumber }) => {
@@ -1212,14 +1162,14 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                       setPfStep('choose_action');
                     }}
                     style={{
-                      padding: isPhoneLayout ? '14px 12px' : '16px 14px',
-                      minHeight: isPhoneLayout ? '110px' : '120px',
-                      borderRadius: 'var(--radius-lg)',
+                      padding: isPhoneLayout ? '8px 10px' : '16px 14px',
+                      minHeight: isPhoneLayout ? '64px' : '120px',
+                      borderRadius: isPhoneLayout ? 'var(--radius-md)' : 'var(--radius-lg)',
                       background: 'var(--bg-surface)',
                       border: `1.5px solid ${activeTeam.primaryColorHex}77`,
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '12px',
+                      gap: isPhoneLayout ? '10px' : '12px',
                       textAlign: 'left',
                       position: 'relative',
                       cursor: 'pointer',
@@ -1230,7 +1180,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                       player={player}
                       jerseyNumber={jerseyNumber}
                       team={activeTeam}
-                      size={isPhoneLayout ? 54 : 64}
+                      size={isPhoneLayout ? 46 : 64}
                     />
 
                     <div style={{ minWidth: 0, flex: 1 }}>
@@ -1239,54 +1189,77 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          gap: '4px',
+                          gap: '6px',
                         }}
                       >
-                        <span
-                          style={{
-                            fontSize: '11px',
-                            fontWeight: 800,
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            background: 'var(--bg-canvas)',
-                            color: 'var(--accent-primary)',
-                            border: '1px solid var(--border-subtle)',
-                          }}
-                        >
-                          {slot}
-                        </span>
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                          {player.handedness}-Hand
-                        </span>
-                      </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+                          <span
+                            style={{
+                              fontSize: '10.5px',
+                              fontWeight: 800,
+                              padding: '1px 5px',
+                              borderRadius: '4px',
+                              background: 'var(--bg-canvas)',
+                              color: 'var(--accent-primary)',
+                              border: '1px solid var(--border-subtle)',
+                              flexShrink: 0,
+                            }}
+                          >
+                            {slot}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: isPhoneLayout ? '14px' : '16px',
+                              fontWeight: 800,
+                              lineHeight: 1.2,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            #{jerseyNumber} {player.lastName}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: '11px',
+                              color: 'var(--text-secondary)',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {player.firstName}
+                          </span>
+                        </div>
 
-                      <div
-                        style={{
-                          fontSize: isPhoneLayout ? '14.5px' : '16px',
-                          fontWeight: 800,
-                          lineHeight: 1.25,
-                          marginTop: '4px',
-                        }}
-                      >
-                        #{jerseyNumber} {player.lastName}
-                      </div>
-
-                      <div
-                        style={{
-                          fontSize: '11px',
-                          color: 'var(--text-secondary)',
-                          marginTop: '2px',
-                        }}
-                      >
-                        {player.firstName}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                            {player.handedness}-Hand
+                          </span>
+                          {isPhoneLayout && (
+                            <span
+                              style={{
+                                fontSize: '10.5px',
+                                fontWeight: 800,
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                background: 'rgba(56, 189, 248, 0.12)',
+                                color: 'var(--accent-primary)',
+                                border: '1px solid rgba(56, 189, 248, 0.25)',
+                              }}
+                            >
+                              + Akcija →
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       <div
                         style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '6px',
-                          marginTop: '6px',
+                          gap: '8px',
+                          marginTop: '4px',
                           fontSize: '11px',
                           fontWeight: 700,
                           flexWrap: 'wrap',
@@ -1385,9 +1358,9 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
               style={{
                 display: 'grid',
                 gridTemplateColumns: isPhoneLayout
-                  ? 'repeat(2, 1fr)'
+                  ? '1fr'
                   : 'repeat(auto-fill, minmax(210px, 1fr))',
-                gap: '12px',
+                gap: isPhoneLayout ? '8px' : '12px',
               }}
             >
               {benchPlayers.map(({ player, jerseyNumber }) => {
@@ -1408,13 +1381,14 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                       setSubstitutingBenchPlayer({ player, jerseyNumber });
                     }}
                     style={{
-                      padding: '12px 14px',
+                      padding: isPhoneLayout ? '8px 10px' : '12px 14px',
+                      minHeight: isPhoneLayout ? '58px' : '72px',
                       borderRadius: 'var(--radius-md)',
                       background: 'var(--bg-surface)',
                       border: '1px solid var(--border-subtle)',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '12px',
+                      gap: isPhoneLayout ? '10px' : '12px',
                       textAlign: 'left',
                       position: 'relative',
                       cursor: 'pointer',
@@ -1425,7 +1399,7 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                       player={player}
                       jerseyNumber={jerseyNumber}
                       team={activeTeam}
-                      size={54}
+                      size={isPhoneLayout ? 42 : 54}
                     />
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div
@@ -1436,18 +1410,24 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                           gap: '6px',
                         }}
                       >
-                        <span style={{ fontSize: '15px', fontWeight: 800 }}>
-                          #{jerseyNumber} {player.lastName}
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+                          <span style={{ fontSize: isPhoneLayout ? '14px' : '15px', fontWeight: 800 }}>
+                            #{jerseyNumber} {player.lastName}
+                          </span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                            {player.firstName}
+                          </span>
+                        </div>
                         <span
                           style={{
-                            fontSize: '10.5px',
+                            fontSize: '10px',
                             fontWeight: 800,
                             padding: '2px 6px',
                             borderRadius: '4px',
                             background: 'rgba(56, 189, 248, 0.16)',
                             color: 'var(--accent-primary)',
                             border: '1px solid var(--accent-primary)',
+                            flexShrink: 0,
                           }}
                         >
                           ⇄ {locale === 'sl' ? 'Menjaj' : 'Sub In'}
@@ -1455,21 +1435,19 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                       </div>
                       <div
                         style={{
-                          fontSize: '11.5px',
-                          color: 'var(--text-secondary)',
-                        }}
-                      >
-                        {player.primaryPosition} · {player.firstName}
-                      </div>
-                      <div
-                        style={{
                           fontSize: '11px',
-                          color: pmColor,
+                          color: 'var(--text-secondary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
                           marginTop: '2px',
-                          fontWeight: 700,
                         }}
                       >
-                        {pm > 0 ? `+${pm}` : pm} +/-
+                        <span>{player.primaryPosition}</span>
+                        <span>·</span>
+                        <span style={{ color: pmColor, fontWeight: 700 }}>
+                          {pm > 0 ? `+${pm}` : pm} +/-
+                        </span>
                       </div>
                     </div>
                   </button>
@@ -1831,8 +1809,8 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   )
                 }
                 style={{
-                  minHeight: '54px',
-                  padding: '10px',
+                  minHeight: '50px',
+                  padding: '8px 10px',
                   borderRadius: 'var(--radius-md)',
                   background: 'var(--accent-primary-subtle)',
                   border: '1.5px solid var(--accent-primary)',
@@ -1840,8 +1818,9 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
                   alignItems: 'center',
                   gap: '8px',
                   fontWeight: 800,
-                  fontSize: '13px',
+                  fontSize: '12.5px',
                   cursor: 'pointer',
+                  gridColumn: isPhoneLayout ? 'span 2' : undefined,
                 }}
               >
                 <MiniCourtZoneDiagram highlight="7m" size={26} />
@@ -1944,15 +1923,15 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
           {shotOrigin && (
             <div
               style={{
-                padding: '12px 14px',
+                padding: '10px 12px',
                 borderRadius: 'var(--radius-md)',
                 background: 'rgba(56, 189, 248, 0.14)',
                 border: '2px solid var(--accent-primary)',
                 display: 'flex',
-                alignItems: 'center',
+                flexDirection: isPhoneLayout ? 'column' : 'row',
+                alignItems: isPhoneLayout ? 'stretch' : 'center',
                 justifyContent: 'space-between',
-                gap: '12px',
-                flexWrap: 'wrap',
+                gap: '8px',
               }}
             >
               <div>
@@ -2105,15 +2084,15 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
           {goalTarget && (
             <div
               style={{
-                padding: '12px 14px',
+                padding: '10px 12px',
                 borderRadius: 'var(--radius-md)',
                 background: 'rgba(0, 229, 163, 0.14)',
                 border: '2px solid var(--sem-goal)',
                 display: 'flex',
-                alignItems: 'center',
+                flexDirection: isPhoneLayout ? 'column' : 'row',
+                alignItems: isPhoneLayout ? 'stretch' : 'center',
                 justifyContent: 'space-between',
-                gap: '12px',
-                flexWrap: 'wrap',
+                gap: '8px',
               }}
             >
               <div>
@@ -2443,12 +2422,44 @@ export const LiveMatchScreen: React.FC<{ isPhoneLayout: boolean }> = ({
           style={{
             display: 'grid',
             gridTemplateColumns: isPhoneLayout ? '1fr' : '1.35fr 0.65fr',
-            gap: '14px',
+            gap: isPhoneLayout ? '10px' : '14px',
             alignItems: 'start',
           }}
         >
           {renderPlayerFirstMode()}
-          {renderInsightsAndFeedColumn()}
+
+          {/* On Mobile: Collapsible Accordion; On Tablet/Desktop: Always Open Side Panel */}
+          {isPhoneLayout ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+              <button
+                type="button"
+                onClick={() => setIsFeedExpandedOnMobile(!isFeedExpandedOnMobile)}
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--bg-surface)',
+                  border: '1.5px solid var(--border-strong)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  fontSize: '12.5px',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-primary)' }}>
+                  ⚡ {locale === 'sl' ? 'Zadnji dogodki & Vpogledi' : 'Recent Events & Insights'} ({activeEvents.length})
+                </span>
+                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                  {isFeedExpandedOnMobile ? (locale === 'sl' ? 'Skrij ▲' : 'Hide ▲') : (locale === 'sl' ? 'Pokaži ▼' : 'Show ▼')}
+                </span>
+              </button>
+              {isFeedExpandedOnMobile && renderInsightsAndFeedColumn()}
+            </div>
+          ) : (
+            renderInsightsAndFeedColumn()
+          )}
         </div>
       </div>
 
